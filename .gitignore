@@ -137,3 +137,14 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# MacOS
+.DS_Store
+Thumbs.db
+
+# Stryker
+.stryker-tmp/
+reports/mutation/
+
+# TypeDoc
+api-docs/

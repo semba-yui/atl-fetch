@@ -1,0 +1,9 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "excludePrivate": true,
+  "excludeProtected": false,
+  "includeVersion": true,
+  "out": "api-docs",
+  "plugin": ["typedoc-plugin-merge-modules", "typedoc-theme-hierarchy"],
+  "theme": "hierarchy"
+}

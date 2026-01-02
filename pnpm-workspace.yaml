@@ -1,0 +1,68 @@
+catalog:
+  '@biomejs/biome': 2.3.10
+  '@commitlint/cli': 20.3.0
+  '@commitlint/config-conventional': 20.3.0
+  '@fast-check/vitest': 0.2.4
+  '@secretlint/secretlint-rule-preset-recommend': 11.2.5
+  '@stryker-mutator/core': 9.4.0
+  '@stryker-mutator/typescript-checker': 9.4.0
+  '@stryker-mutator/vitest-runner': 9.4.0
+  '@t3-oss/env-core': 0.13.10
+  '@types/jsdom': 27.0.0
+  '@types/node': 25.0.3
+  '@types/turndown': 5.0.6
+  '@types/yargs': 17.0.35
+  '@vitest/coverage-v8': 4.0.16
+  dependency-cruiser: 17.3.5
+  diff: 8.0.2
+  fast-check: 4.5.3
+  got: 14.6.6
+  jsdom: 27.4.0
+  lefthook: 2.0.13
+  msw: 2.12.7
+  neverthrow: 8.2.0
+  remark: 15.0.1
+  remark-cli: 12.0.1
+  remark-frontmatter: 5.0.0
+  remark-gfm: 4.0.1
+  remark-lint: 10.0.1
+  remark-preset-lint-consistent: 6.0.1
+  remark-preset-lint-recommended: 7.0.1
+  remark-toc: 9.0.0
+  secretlint: 11.2.5
+  ts-node: 10.9.2
+  turndown: 7.2.2
+  turndown-plugin-gfm: 1.0.2
+  typedoc: 0.28.15
+  typedoc-plugin-merge-modules: 7.0.0
+  typedoc-theme-hierarchy: 6.0.0
+  typescript: 5.9.3
+  vitest: 4.0.16
+  yaml: 2.8.2
+  yargs: 18.0.0
+  zod: 4.3.4
+
+catalogMode: strict
+
+cleanupUnusedCatalogs: true
+
+disallowWorkspaceCycles: true
+
+engineStrict: true
+
+linkWorkspacePackages: true
+
+onlyBuiltDependencies:
+  - esbuild
+  - lefthook
+  - msw
+
+preferWorkspacePackages: true
+
+saveWorkspaceProtocol: true
+
+shamefullyHoist: false
+
+sharedWorkspaceLockfile: true
+
+strictPeerDependencies: true

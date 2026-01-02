@@ -1,0 +1,22 @@
+{
+  "approvals": {
+    "design": {
+      "approved": false,
+      "generated": false
+    },
+    "requirements": {
+      "approved": false,
+      "generated": false
+    },
+    "tasks": {
+      "approved": false,
+      "generated": false
+    }
+  },
+  "created_at": "{{TIMESTAMP}}",
+  "feature_name": "{{FEATURE_NAME}}",
+  "language": "ja",
+  "phase": "initialized",
+  "ready_for_implementation": false,
+  "updated_at": "{{TIMESTAMP}}"
+}

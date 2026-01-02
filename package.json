@@ -1,0 +1,108 @@
+{
+  "author": "Ryuichiro Semba",
+  "bin": {
+    "atl-fetch": "dist/index.js"
+  },
+  "bugs": {
+    "url": "https://github.com/semba-yui/atl-fetch/issues"
+  },
+  "dependencies": {
+    "@t3-oss/env-core": "catalog:",
+    "diff": "catalog:",
+    "got": "catalog:",
+    "jsdom": "catalog:",
+    "neverthrow": "catalog:",
+    "turndown": "catalog:",
+    "turndown-plugin-gfm": "catalog:",
+    "yaml": "catalog:",
+    "yargs": "catalog:",
+    "zod": "catalog:"
+  },
+  "description": "Atlassianの情報をfetchする",
+  "devDependencies": {
+    "@biomejs/biome": "catalog:",
+    "@commitlint/cli": "catalog:",
+    "@commitlint/config-conventional": "catalog:",
+    "@fast-check/vitest": "catalog:",
+    "@secretlint/secretlint-rule-preset-recommend": "catalog:",
+    "@stryker-mutator/core": "catalog:",
+    "@stryker-mutator/typescript-checker": "catalog:",
+    "@stryker-mutator/vitest-runner": "catalog:",
+    "@types/jsdom": "catalog:",
+    "@types/node": "catalog:",
+    "@types/turndown": "catalog:",
+    "@types/yargs": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
+    "dependency-cruiser": "catalog:",
+    "fast-check": "catalog:",
+    "lefthook": "catalog:",
+    "msw": "catalog:",
+    "remark": "catalog:",
+    "remark-cli": "catalog:",
+    "remark-frontmatter": "catalog:",
+    "remark-gfm": "catalog:",
+    "remark-lint": "catalog:",
+    "remark-preset-lint-consistent": "catalog:",
+    "remark-preset-lint-recommended": "catalog:",
+    "remark-toc": "catalog:",
+    "secretlint": "catalog:",
+    "ts-node": "catalog:",
+    "typedoc": "catalog:",
+    "typedoc-plugin-merge-modules": "catalog:",
+    "typedoc-theme-hierarchy": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "homepage": "https://github.com/semba-yui/atl-fetch#readme",
+  "keywords": [],
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "name": "atl-fetch",
+  "packageManager": "pnpm@10.27.0",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/semba-yui/atl-fetch.git"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "docs:gen": "typedoc",
+    "lint": "biome check .",
+    "lint:actions": "actionlint",
+    "lint:deps": "dependency-cruise src --config .dependency-cruiser.cjs",
+    "lint:deps:graph": "dependency-cruise src --config .dependency-cruiser.cjs --output-type dot | dot -T svg > dependency-graph.svg",
+    "lint:fix": "biome check --write .",
+    "lint:gha": "ghalint run",
+    "lint:md": "remark . --quiet",
+    "lint:md:fix": "remark . --quiet --output",
+    "lint:secret": "secretlint \"**/*\"",
+    "lint:yaml": "yamllint .",
+    "lint:zizmor": "zizmor .github/workflows/",
+    "prepublishOnly": "pnpm run lint && pnpm run test && pnpm run build",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:mutation": "stryker run",
+    "test:mutation:dry": "stryker run --dryRunOnly",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "version": "1.0.0"
+}

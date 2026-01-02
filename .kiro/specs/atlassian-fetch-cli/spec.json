@@ -1,0 +1,22 @@
+{
+  "approvals": {
+    "design": {
+      "approved": true,
+      "generated": true
+    },
+    "requirements": {
+      "approved": true,
+      "generated": true
+    },
+    "tasks": {
+      "approved": true,
+      "generated": true
+    }
+  },
+  "created_at": "2026-01-01T00:00:00Z",
+  "feature_name": "atlassian-fetch-cli",
+  "language": "ja",
+  "phase": "tasks-generated",
+  "ready_for_implementation": true,
+  "updated_at": "2026-01-02T00:00:00Z"
+}

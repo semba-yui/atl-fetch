@@ -1,0 +1,52 @@
+commit-msg:
+  jobs:
+    - name: commitlint
+      run: pnpm commitlint --edit {1}
+
+pre-commit:
+  parallel: true
+  jobs:
+    - name: secretlint
+      run: pnpm lint:secret
+
+    - name: remark
+      glob: "*.md"
+      run: pnpm lint:md
+
+    - name: biome
+      run: pnpm lint:fix && git add -u
+
+    - name: typecheck
+      run: pnpm typecheck
+
+pre-push:
+  parallel: true
+  jobs:
+    - name: biome
+      run: pnpm lint
+
+    - name: secretlint
+      run: pnpm lint:secret
+
+    - name: remark
+      glob: "*.md"
+      run: pnpm lint:md
+
+    - name: yamllint
+      glob: "*.{yml,yaml}"
+      run: pnpm lint:yaml
+
+    - name: actionlint
+      glob: ".github/workflows/*.{yml,yaml}"
+      run: pnpm lint:actions
+
+    - name: ghalint
+      glob: ".github/workflows/*.{yml,yaml}"
+      run: pnpm lint:gha
+
+    - name: zizmor
+      glob: ".github/workflows/*.{yml,yaml}"
+      run: pnpm lint:zizmor
+
+    - name: typecheck
+      run: pnpm typecheck

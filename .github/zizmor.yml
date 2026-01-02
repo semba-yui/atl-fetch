@@ -1,0 +1,6 @@
+rules:
+  cache-poisoning:
+    ignore:
+      # setup-node is used only for npm registry-url configuration (OIDC auth)
+      # Dependencies are already installed via pnpm, so cache is not actually used
+      - publish.yml:62

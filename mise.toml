@@ -1,0 +1,7 @@
+[tools]
+actionlint = "latest"
+ghalint = "latest"
+node = "22"
+pnpm = "10.27"
+yamllint = "latest"
+zizmor = "latest"
