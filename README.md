@@ -37,7 +37,6 @@ pnpm add -g atl-fetch
 ### 1. 環境変数の設定
 
 ```bash
-export ATLASSIAN_DOMAIN="your-domain.atlassian.net"
 export ATLASSIAN_EMAIL="your-email@example.com"
 export ATLASSIAN_API_TOKEN="your-api-token"
 ```
@@ -56,53 +55,26 @@ atl-fetch https://your-domain.atlassian.net/wiki/spaces/SPACE/pages/123456/Page+
 # Markdown 形式で出力
 atl-fetch https://your-domain.atlassian.net/browse/PROJECT-123 --format markdown
 
-# ファイルに保存
-atl-fetch https://your-domain.atlassian.net/browse/PROJECT-123 --output result.json
+# 添付ファイルをダウンロード
+atl-fetch https://your-domain.atlassian.net/browse/PROJECT-123 --download --dir ./output
+
+# ファイルに保存（リダイレクト）
+atl-fetch https://your-domain.atlassian.net/browse/PROJECT-123 > result.json
 ```
 
 ## CLI オプション
 
-| オプション                    | 短縮形  | 説明                           | デフォルト         |
-| ------------------------ | ---- | ---------------------------- | ------------- |
-| `--format`               | `-f` | 出力形式（json / markdown / yaml） | json          |
-| `--output`               | `-o` | 出力ファイルパス                     | stdout        |
-| `--include-comments`     | `-c` | コメントを含める                     | false         |
-| `--include-history`      | `-h` | 変更履歴を含める                     | false         |
-| `--include-attachments`  | `-a` | 添付ファイルを含める                   | false         |
-| `--download-attachments` | `-d` | 添付ファイルをダウンロード                | false         |
-| `--attachments-dir`      |      | 添付ファイルの保存先                   | ./attachments |
-| `--diff`                 |      | 指定バージョンとの差分を表示               | -             |
-| `--help`                 |      | ヘルプを表示                       | -             |
-| `--version`              |      | バージョンを表示                     | -             |
+| オプション        | 短縮形  | 説明                           | デフォルト |
+| ------------ | ---- | ---------------------------- | ----- |
+| `--format`   | `-f` | 出力形式（json / markdown / yaml） | json  |
+| `--download` | `-d` | 添付ファイルをダウンロード                | false |
+| `--dir`      | `-o` | 保存先ディレクトリ                    | -     |
+| `--diff`     |      | 差分のみを出力                      | false |
+| `--color`    |      | カラー出力を有効化                    | true  |
+| `--help`     | `-h` | ヘルプを表示                       | -     |
+| `--version`  | `-V` | バージョンを表示                     | -     |
 
-## ライブラリとしての使用
-
-```typescript
-import { fetchJiraIssue, fetchConfluencePage } from 'atl-fetch';
-
-// Jira Issue を取得
-const jiraResult = await fetchJiraIssue({
-  url: 'https://your-domain.atlassian.net/browse/PROJECT-123',
-  includeComments: true,
-  includeHistory: false,
-});
-
-if (jiraResult.isOk()) {
-  console.log(jiraResult.value);
-} else {
-  console.error(jiraResult.error);
-}
-
-// Confluence ページを取得
-const confluenceResult = await fetchConfluencePage({
-  url: 'https://your-domain.atlassian.net/wiki/spaces/SPACE/pages/123456/Page+Title',
-  includeHistory: true,
-});
-
-if (confluenceResult.isOk()) {
-  console.log(confluenceResult.value);
-}
-```
+**注意**: `--dir` は `--download` と一緒に使用する必要があります。
 
 ## ライセンス
 

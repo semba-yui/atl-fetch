@@ -96,12 +96,13 @@ atl-fetch https://mycompany.atlassian.net/browse/PROJ-123 --download --dir ./jir
         ├── manifest.json          # 取得メタデータ
         ├── issue.json             # Issue 全データ
         ├── description.txt        # 説明文（プレーンテキスト）
+        ├── content.md             # Markdown 形式
         ├── changelog.json         # 変更履歴
         ├── comments.json          # コメント一覧
         ├── attachments.json       # 添付ファイルメタデータ
         └── attachments/           # 添付ファイル実体
-            ├── screenshot.png
-            └── specification.pdf
+            ├── 30001_screenshot.png
+            └── 30002_specification.pdf
 ```
 
 ## 他ツールとの連携

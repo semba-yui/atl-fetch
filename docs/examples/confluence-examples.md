@@ -104,24 +104,28 @@ atl-fetch https://mycompany.atlassian.net/wiki/spaces/DOCS/pages/123456789 \
         ├── manifest.json          # 取得メタデータ
         ├── page.json              # ページ全データ
         ├── content.txt            # 本文（プレーンテキスト）
+        ├── content.md             # Markdown 形式
         ├── versions.json          # バージョン一覧メタデータ
         ├── versions/              # 各バージョンの内容
         │   ├── v1/
         │   │   ├── content.json
-        │   │   └── content.txt
+        │   │   ├── content.txt
+        │   │   └── content.md
         │   ├── v2/
         │   │   ├── content.json
         │   │   ├── content.txt
+        │   │   ├── content.md
         │   │   ├── diff.txt       # v1 → v2 の差分
         │   │   └── diff.json
         │   └── v3/
         │       ├── content.json
         │       ├── content.txt
+        │       ├── content.md
         │       ├── diff.txt       # v2 → v3 の差分
         │       └── diff.json
         ├── attachments.json       # 添付ファイルメタデータ
         └── attachments/
-            └── architecture.png
+            └── 40001_architecture.png
 ```
 
 ## 他ツールとの連携

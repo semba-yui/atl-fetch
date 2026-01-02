@@ -38,20 +38,24 @@ pnpm run test
 
 ## プロジェクト構造
 
-```
+```text
 src/
-├── cli/           # CLI 定義（yargs）
-├── services/      # ビジネスロジック
-│   ├── auth/      # 認証
-│   ├── jira/      # Jira API
-│   ├── confluence/# Confluence API
-│   ├── diff/      # 差分計算
-│   ├── output/    # 出力フォーマット
-│   └── ...
-├── ports/         # 外部依存の抽象化
-│   ├── http/      # HTTP クライアント
-│   └── file/      # ファイルシステム
-└── types/         # 型定義
+├── index.ts           # エントリーポイント
+├── cli/               # CLI 定義（yargs）
+├── services/          # ビジネスロジック
+│   ├── auth/          # 認証
+│   ├── confluence/    # Confluence API
+│   ├── diff/          # 差分計算
+│   ├── fetch/         # 統合サービス
+│   ├── jira/          # Jira API
+│   ├── output/        # 出力フォーマット
+│   ├── storage/       # ストレージ（ファイル保存）
+│   ├── text-converter/# テキスト変換
+│   └── url-parser/    # URL パーサー
+├── ports/             # 外部依存の抽象化
+│   ├── http/          # HTTP クライアント
+│   └── file/          # ファイルシステム
+└── types/             # 型定義
 ```
 
 ## コーディング規約

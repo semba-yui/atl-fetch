@@ -306,16 +306,17 @@ attachments:
       "mimeType": "image/png",
       "size": 102400,
       "status": "success",
-      "savedPath": "attachments/screenshot.png"
+      "savedPath": "attachments/30001_screenshot.png"
     }
   ]
 }
 ```
 
-### プレーンテキストファイル
+### プレーンテキスト・Markdown ファイル
 
 - `description.txt` (Jira): 説明文をプレーンテキストに変換
 - `content.txt` (Confluence): 本文をプレーンテキストに変換
+- `content.md` (Jira/Confluence): Markdown 形式で保存
 
 ## 形式の選び方
 
