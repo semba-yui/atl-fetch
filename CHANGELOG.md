@@ -5,6 +5,13 @@
 フォーマットは [Keep a Changelog](https://keepachangelog.com/ja/1.1.0/) に基づいています。
 バージョニングは [Semantic Versioning](https://semver.org/lang/ja/) に従っています。
 
+## [1.2.0](https://github.com/semba-yui/atl-fetch/compare/v1.1.0...v1.2.0) (2026-01-03)
+
+
+### Features
+
+* **storage:** content.md を簡素化し comments.md と changelog.md を分離 ([#4](https://github.com/semba-yui/atl-fetch/issues/4)) ([b558747](https://github.com/semba-yui/atl-fetch/commit/b55874705114383a74023026bcd373e554fce9aa))
+
 ## [Unreleased]
 
 ## [1.2.0] - 2026-01-03
