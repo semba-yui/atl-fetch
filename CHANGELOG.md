@@ -7,6 +7,18 @@
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-01-03
+
+### Added
+
+- Jira Issue 保存時に `comments.md` を出力（コメント一覧の Markdown 形式）
+- Jira Issue 保存時に `changelog.md` を出力（変更履歴の Markdown 形式）
+
+### Changed
+
+- `content.md` を簡素化（Description + Attachments のみ）
+  - Comments と Changelog を別ファイルに分離し、可読性を向上
+
 ## [1.1.0] - 2026-01-03
 
 ### Added
@@ -37,6 +49,7 @@
 - ライブラリとしての使用をサポート
 - TypeScript 型定義同梱
 
-[Unreleased]: https://github.com/semba-yui/atl-fetch/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/semba-yui/atl-fetch/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/semba-yui/atl-fetch/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/semba-yui/atl-fetch/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/semba-yui/atl-fetch/releases/tag/v1.0.0

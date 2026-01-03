@@ -27,7 +27,7 @@ import type {
 import { downloadConfluenceAttachment } from '../confluence/confluence-service.js';
 import { diffText } from '../diff/diff-service.js';
 import { downloadJiraAttachment } from '../jira/jira-service.js';
-import { convertStorageFormatToMarkdown } from '../text-converter/text-converter.js';
+import { convertAdfToMarkdown, convertStorageFormatToMarkdown } from '../text-converter/text-converter.js';
 
 /**
  * 現在時刻を ISO 8601 形式で取得する
@@ -75,9 +75,11 @@ const createJiraManifest = (
  * ├── manifest.json          # 取得メタデータ
  * ├── issue.json             # Issue 全データ（JSON 形式）
  * ├── description.txt        # 説明文のプレーンテキスト
- * ├── content.md             # Markdown 形式
- * ├── changelog.json         # 変更履歴
- * ├── comments.json          # コメント一覧
+ * ├── content.md             # Markdown 形式（Description + Attachments）
+ * ├── comments.md            # コメント一覧（Markdown 形式）
+ * ├── changelog.md           # 変更履歴（Markdown 形式）
+ * ├── changelog.json         # 変更履歴（JSON 形式）
+ * ├── comments.json          # コメント一覧（JSON 形式）
  * ├── attachments.json       # 添付ファイル一覧メタデータ
  * └── attachments/           # 添付ファイル実体
  *     └── {id}_{filename}
@@ -189,7 +191,7 @@ export const saveJiraIssue = async (
     });
   }
 
-  // content.md を保存（Markdown 形式）
+  // content.md を保存（Markdown 形式：Description + Attachments）
   const markdownContent = formatJiraIssueAsMarkdown(data, attachmentResults);
   const markdownPath = join(issueDir, 'content.md');
   const markdownWriteResult = await writeFileContent(markdownPath, markdownContent);
@@ -198,6 +200,30 @@ export const saveJiraIssue = async (
       kind: 'FILE_WRITE_FAILED',
       message: `content.md の書き込みに失敗しました: ${markdownWriteResult.error.message}`,
       path: markdownPath,
+    });
+  }
+
+  // comments.md を保存（Markdown 形式）
+  const commentsMarkdownContent = formatCommentsAsMarkdown(data, attachmentResults);
+  const commentsMarkdownPath = join(issueDir, 'comments.md');
+  const commentsMarkdownWriteResult = await writeFileContent(commentsMarkdownPath, commentsMarkdownContent);
+  if (commentsMarkdownWriteResult.isErr()) {
+    return err({
+      kind: 'FILE_WRITE_FAILED',
+      message: `comments.md の書き込みに失敗しました: ${commentsMarkdownWriteResult.error.message}`,
+      path: commentsMarkdownPath,
+    });
+  }
+
+  // changelog.md を保存（Markdown 形式）
+  const changelogMarkdownContent = formatChangelogAsMarkdown(data);
+  const changelogMarkdownPath = join(issueDir, 'changelog.md');
+  const changelogMarkdownWriteResult = await writeFileContent(changelogMarkdownPath, changelogMarkdownContent);
+  if (changelogMarkdownWriteResult.isErr()) {
+    return err({
+      kind: 'FILE_WRITE_FAILED',
+      message: `changelog.md の書き込みに失敗しました: ${changelogMarkdownWriteResult.error.message}`,
+      path: changelogMarkdownPath,
     });
   }
 
@@ -243,11 +269,22 @@ export const saveJiraIssue = async (
 /**
  * Jira Issue を Markdown 形式にフォーマットする（ファイル保存用）
  *
+ * ADF (Atlassian Document Format) を Markdown に変換して保存する。
+ * Confluence と同様に構造を保持した Markdown を生成する。
+ *
  * @param data 保存データ
  * @param attachmentResults 添付ファイルのダウンロード結果
  * @returns Markdown 文字列
  */
 const formatJiraIssueAsMarkdown = (data: JiraSaveData, attachmentResults: readonly AttachmentResult[]): string => {
+  // 添付ファイル ID → savedPath のマッピングを生成
+  const attachmentPaths: Record<string, string> = {};
+  for (const att of attachmentResults) {
+    if (att.status === 'success' && att.savedPath !== undefined) {
+      attachmentPaths[att.id] = att.savedPath;
+    }
+  }
+
   const lines: string[] = [];
 
   // Title
@@ -256,43 +293,16 @@ const formatJiraIssueAsMarkdown = (data: JiraSaveData, attachmentResults: readon
   lines.push(`**${data.summary}**`);
   lines.push('');
 
-  // Description
+  // Description - ADF を Markdown に変換
   lines.push('## Description');
   lines.push('');
-  lines.push(data.descriptionPlainText ?? '(No description)');
-  lines.push('');
-
-  // Comments
-  lines.push('## Comments');
-  lines.push('');
-  if (data.comments.length === 0) {
-    lines.push('No comments');
+  if (data.description !== null && data.description !== undefined) {
+    const descriptionMarkdown = convertAdfToMarkdown(data.description, attachmentPaths);
+    lines.push(descriptionMarkdown || '(No description)');
   } else {
-    for (const comment of data.comments) {
-      lines.push(`### ${comment.author} (${comment.created})`);
-      lines.push('');
-      lines.push(comment.body);
-      lines.push('');
-    }
+    lines.push('(No description)');
   }
-
-  // Changelog
-  lines.push('## Changelog');
   lines.push('');
-  if (data.changelog.length === 0) {
-    lines.push('No changelog');
-  } else {
-    for (const entry of data.changelog) {
-      lines.push(`### ${entry.author} (${entry.created})`);
-      lines.push('');
-      for (const item of entry.items) {
-        const from = item.fromString ?? '(empty)';
-        const to = item.toString ?? '(empty)';
-        lines.push(`- **${item.field}**: ${from} → ${to}`);
-      }
-      lines.push('');
-    }
-  }
 
   // Attachments
   lines.push('## Attachments');
@@ -312,6 +322,73 @@ const formatJiraIssueAsMarkdown = (data: JiraSaveData, attachmentResults: readon
       } else {
         lines.push(`- **${att.filename}** (${att.mimeType}, ${sizeKB} KB) - ダウンロード失敗`);
       }
+    }
+  }
+
+  return lines.join('\n');
+};
+
+/**
+ * Jira コメントを Markdown 形式にフォーマットする（ファイル保存用）
+ *
+ * @param data 保存データ
+ * @param attachmentResults 添付ファイルのダウンロード結果
+ * @returns Markdown 文字列
+ */
+const formatCommentsAsMarkdown = (data: JiraSaveData, attachmentResults: readonly AttachmentResult[]): string => {
+  // 添付ファイル ID → savedPath のマッピングを生成
+  const attachmentPaths: Record<string, string> = {};
+  for (const att of attachmentResults) {
+    if (att.status === 'success' && att.savedPath !== undefined) {
+      attachmentPaths[att.id] = att.savedPath;
+    }
+  }
+
+  const lines: string[] = [];
+
+  lines.push(`# ${data.key} - Comments`);
+  lines.push('');
+
+  if (data.comments.length === 0) {
+    lines.push('No comments');
+  } else {
+    for (const comment of data.comments) {
+      lines.push(`## ${comment.author} (${comment.created})`);
+      lines.push('');
+      // コメント本文も ADF 形式なので Markdown に変換
+      const commentMarkdown = convertAdfToMarkdown(comment.bodyAdf, attachmentPaths);
+      lines.push(commentMarkdown || comment.body);
+      lines.push('');
+    }
+  }
+
+  return lines.join('\n');
+};
+
+/**
+ * Jira 変更履歴を Markdown 形式にフォーマットする（ファイル保存用）
+ *
+ * @param data 保存データ
+ * @returns Markdown 文字列
+ */
+const formatChangelogAsMarkdown = (data: JiraSaveData): string => {
+  const lines: string[] = [];
+
+  lines.push(`# ${data.key} - Changelog`);
+  lines.push('');
+
+  if (data.changelog.length === 0) {
+    lines.push('No changelog');
+  } else {
+    for (const entry of data.changelog) {
+      lines.push(`## ${entry.author} (${entry.created})`);
+      lines.push('');
+      for (const item of entry.items) {
+        const from = item.fromString ?? '(empty)';
+        const to = item.toString ?? '(empty)';
+        lines.push(`- **${item.field}**: ${from} → ${to}`);
+      }
+      lines.push('');
     }
   }
 
@@ -848,6 +925,215 @@ if (import.meta.vitest) {
         const html = '<div class="container"><h1>Title</h1><p>Hello &amp; <strong>World</strong>!</p></div>';
         expect(stripHtmlTags(html)).toBe('Title Hello & World !');
       });
+    });
+  });
+
+  describe('formatCommentsAsMarkdown (in-source testing)', () => {
+    // テストの目的: コメントがない場合に "No comments" が出力されること
+    it('Given: コメントがない JiraSaveData, When: formatCommentsAsMarkdown を呼び出す, Then: "No comments" が出力される', () => {
+      const data: JiraSaveData = {
+        attachments: [],
+        changelog: [],
+        comments: [],
+        description: null,
+        descriptionPlainText: null,
+        key: 'TEST-001',
+        summary: 'テスト',
+      };
+      const result = formatCommentsAsMarkdown(data, []);
+
+      expect(result).toContain('# TEST-001 - Comments');
+      expect(result).toContain('No comments');
+    });
+
+    // テストの目的: コメントが正しくフォーマットされること
+    it('Given: コメントを含む JiraSaveData, When: formatCommentsAsMarkdown を呼び出す, Then: コメントが Markdown 形式でフォーマットされる', () => {
+      const data: JiraSaveData = {
+        attachments: [],
+        changelog: [],
+        comments: [
+          {
+            author: 'TestUser',
+            body: 'テストコメント',
+            bodyAdf: null, // bodyAdf が null の場合は body が使用される
+            created: '2024-01-15T10:30:00.000Z',
+            id: 'cmt-1',
+            updated: '2024-01-15T10:30:00.000Z',
+          },
+        ],
+        description: null,
+        descriptionPlainText: null,
+        key: 'TEST-002',
+        summary: 'テスト',
+      };
+      const result = formatCommentsAsMarkdown(data, []);
+
+      expect(result).toContain('# TEST-002 - Comments');
+      expect(result).toContain('## TestUser');
+      expect(result).toContain('2024-01-15T10:30:00.000Z');
+      expect(result).toContain('テストコメント');
+    });
+
+    // テストの目的: 複数のコメントが正しくフォーマットされること
+    it('Given: 複数のコメントを含む JiraSaveData, When: formatCommentsAsMarkdown を呼び出す, Then: すべてのコメントが Markdown 形式でフォーマットされる', () => {
+      const data: JiraSaveData = {
+        attachments: [],
+        changelog: [],
+        comments: [
+          {
+            author: 'User1',
+            body: 'コメント1',
+            bodyAdf: null,
+            created: '2024-01-15T10:00:00.000Z',
+            id: 'cmt-1',
+            updated: '2024-01-15T10:00:00.000Z',
+          },
+          {
+            author: 'User2',
+            body: 'コメント2',
+            bodyAdf: null,
+            created: '2024-01-16T11:00:00.000Z',
+            id: 'cmt-2',
+            updated: '2024-01-16T11:00:00.000Z',
+          },
+        ],
+        description: null,
+        descriptionPlainText: null,
+        key: 'TEST-003',
+        summary: 'テスト',
+      };
+      const result = formatCommentsAsMarkdown(data, []);
+
+      expect(result).toContain('## User1');
+      expect(result).toContain('## User2');
+      expect(result).toContain('コメント1');
+      expect(result).toContain('コメント2');
+    });
+  });
+
+  describe('formatChangelogAsMarkdown (in-source testing)', () => {
+    // テストの目的: 変更履歴がない場合に "No changelog" が出力されること
+    it('Given: 変更履歴がない JiraSaveData, When: formatChangelogAsMarkdown を呼び出す, Then: "No changelog" が出力される', () => {
+      const data: JiraSaveData = {
+        attachments: [],
+        changelog: [],
+        comments: [],
+        description: null,
+        descriptionPlainText: null,
+        key: 'TEST-001',
+        summary: 'テスト',
+      };
+      const result = formatChangelogAsMarkdown(data);
+
+      expect(result).toContain('# TEST-001 - Changelog');
+      expect(result).toContain('No changelog');
+    });
+
+    // テストの目的: 変更履歴が正しくフォーマットされること
+    it('Given: 変更履歴を含む JiraSaveData, When: formatChangelogAsMarkdown を呼び出す, Then: 変更履歴が Markdown 形式でフォーマットされる', () => {
+      const data: JiraSaveData = {
+        attachments: [],
+        changelog: [
+          {
+            author: 'ChangeUser',
+            created: '2024-01-15T10:00:00.000Z',
+            id: 'cl-1',
+            items: [{ field: 'status', fromString: 'Open', toString: 'In Progress' }],
+          },
+        ],
+        comments: [],
+        description: null,
+        descriptionPlainText: null,
+        key: 'TEST-002',
+        summary: 'テスト',
+      };
+      const result = formatChangelogAsMarkdown(data);
+
+      expect(result).toContain('# TEST-002 - Changelog');
+      expect(result).toContain('## ChangeUser');
+      expect(result).toContain('2024-01-15T10:00:00.000Z');
+      expect(result).toContain('**status**');
+      expect(result).toContain('Open');
+      expect(result).toContain('In Progress');
+    });
+
+    // テストの目的: null 値が (empty) として表示されること
+    it('Given: fromString が null の変更履歴, When: formatChangelogAsMarkdown を呼び出す, Then: (empty) が表示される', () => {
+      const data: JiraSaveData = {
+        attachments: [],
+        changelog: [
+          {
+            author: 'ChangeUser',
+            created: '2024-01-15T10:00:00.000Z',
+            id: 'cl-1',
+            items: [{ field: 'assignee', fromString: null, toString: 'Developer' }],
+          },
+        ],
+        comments: [],
+        description: null,
+        descriptionPlainText: null,
+        key: 'TEST-003',
+        summary: 'テスト',
+      };
+      const result = formatChangelogAsMarkdown(data);
+
+      expect(result).toContain('(empty)');
+      expect(result).toContain('Developer');
+    });
+
+    // テストの目的: toString が null の場合も (empty) として表示されること
+    it('Given: toString が null の変更履歴, When: formatChangelogAsMarkdown を呼び出す, Then: (empty) が表示される', () => {
+      const data: JiraSaveData = {
+        attachments: [],
+        changelog: [
+          {
+            author: 'ChangeUser',
+            created: '2024-01-15T10:00:00.000Z',
+            id: 'cl-1',
+            items: [{ field: 'assignee', fromString: 'Developer', toString: null }],
+          },
+        ],
+        comments: [],
+        description: null,
+        descriptionPlainText: null,
+        key: 'TEST-004',
+        summary: 'テスト',
+      };
+      const result = formatChangelogAsMarkdown(data);
+
+      expect(result).toContain('Developer');
+      expect(result).toContain('(empty)');
+    });
+
+    // テストの目的: 複数の変更項目が正しくフォーマットされること
+    it('Given: 複数の変更項目を含む変更履歴, When: formatChangelogAsMarkdown を呼び出す, Then: すべての項目が Markdown 形式でフォーマットされる', () => {
+      const data: JiraSaveData = {
+        attachments: [],
+        changelog: [
+          {
+            author: 'ChangeUser',
+            created: '2024-01-15T10:00:00.000Z',
+            id: 'cl-1',
+            items: [
+              { field: 'status', fromString: 'Open', toString: 'In Progress' },
+              { field: 'priority', fromString: 'Low', toString: 'High' },
+            ],
+          },
+        ],
+        comments: [],
+        description: null,
+        descriptionPlainText: null,
+        key: 'TEST-005',
+        summary: 'テスト',
+      };
+      const result = formatChangelogAsMarkdown(data);
+
+      expect(result).toContain('**status**');
+      expect(result).toContain('**priority**');
+      expect(result).toContain('Open');
+      expect(result).toContain('In Progress');
+      expect(result).toContain('Low');
+      expect(result).toContain('High');
     });
   });
 }

@@ -6,8 +6,10 @@ export interface JiraComment {
   readonly id: string;
   /** 作成者の表示名 */
   readonly author: string;
-  /** コメント本文 */
+  /** コメント本文（プレーンテキスト） */
   readonly body: string;
+  /** コメント本文（ADF 形式、Markdown 変換用） */
+  readonly bodyAdf: unknown;
   /** 作成日時（ISO 8601 形式） */
   readonly created: string;
   /** 更新日時（ISO 8601 形式） */
@@ -66,6 +68,8 @@ export interface JiraIssue {
   readonly summary: string;
   /** Issue 説明（null の場合は説明なし） */
   readonly description: string | null;
+  /** Issue 説明（ADF 形式、Markdown 変換用） */
+  readonly descriptionAdf: unknown;
   /** コメント一覧 */
   readonly comments: readonly JiraComment[];
   /** 変更履歴一覧 */

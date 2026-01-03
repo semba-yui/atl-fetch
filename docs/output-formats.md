@@ -283,6 +283,48 @@ attachments:
 
 `--download` オプションを使用すると、以下のファイルが生成されます。
 
+### Jira Issue のディレクトリ構造
+
+```text
+output/jira/{ISSUE-KEY}/
+├── manifest.json          # 取得メタデータ
+├── issue.json             # Issue 全データ（JSON 形式）
+├── description.txt        # 説明文のプレーンテキスト
+├── content.md             # Markdown 形式（Description + Attachments）
+├── comments.md            # コメント一覧（Markdown 形式）
+├── changelog.md           # 変更履歴（Markdown 形式）
+├── changelog.json         # 変更履歴（JSON 形式）
+├── comments.json          # コメント一覧（JSON 形式）
+├── attachments.json       # 添付ファイル一覧メタデータ
+└── attachments/           # 添付ファイル実体
+    └── {id}_{filename}
+```
+
+### Confluence ページのディレクトリ構造
+
+```text
+output/confluence/{PAGE-ID}/
+├── manifest.json          # 取得メタデータ
+├── page.json              # ページ全データ（JSON 形式）
+├── content.txt            # 本文のプレーンテキスト
+├── content.md             # Markdown 形式
+├── versions.json          # バージョン一覧メタデータ
+├── attachments.json       # 添付ファイル一覧メタデータ
+├── attachments/           # 添付ファイル実体
+│   └── {id}_{filename}
+└── versions/              # バージョン別コンテンツ
+    ├── v1/
+    │   ├── content.json
+    │   ├── content.txt
+    │   └── content.md
+    └── v2/
+        ├── content.json
+        ├── content.txt
+        ├── content.md
+        ├── diff.txt       # 前バージョンとの差分
+        └── diff.json
+```
+
 ### manifest.json
 
 取得メタデータを記録します。

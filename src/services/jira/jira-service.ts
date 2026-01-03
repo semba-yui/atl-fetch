@@ -123,6 +123,7 @@ function mapApiCommentToJiraComment(apiComment: z.infer<typeof jiraApiCommentSch
   return {
     author: apiComment.author.displayName,
     body: extractTextFromAdf(apiComment.body),
+    bodyAdf: apiComment.body,
     created: apiComment.created,
     id: apiComment.id,
     updated: apiComment.updated,
@@ -281,6 +282,7 @@ export async function fetchJiraIssue(organization: string, issueKey: string): Pr
     changelog: (apiResponse.changelog?.histories ?? []).map(mapApiChangelogEntryToJiraChangelogEntry),
     comments: (apiResponse.fields.comment?.comments ?? []).map(mapApiCommentToJiraComment),
     description: apiResponse.fields.description ? extractTextFromAdf(apiResponse.fields.description) : null,
+    descriptionAdf: apiResponse.fields.description,
     key: apiResponse.key,
     summary: apiResponse.fields.summary,
   };

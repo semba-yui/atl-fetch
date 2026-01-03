@@ -16,6 +16,14 @@ import { gfm } from 'turndown-plugin-gfm';
 type AttachmentPathMapping = Record<string, string>;
 
 /**
+ * ADF マークの型定義
+ */
+interface AdfMark {
+  readonly type: string;
+  readonly attrs?: Readonly<Record<string, unknown>>;
+}
+
+/**
  * ADF ノードの型定義
  */
 interface AdfNode {
@@ -23,7 +31,7 @@ interface AdfNode {
   readonly text?: string;
   readonly content?: readonly AdfNode[];
   readonly attrs?: Readonly<Record<string, unknown>>;
-  readonly marks?: readonly { readonly type: string; readonly attrs?: Readonly<Record<string, unknown>> }[];
+  readonly marks?: readonly AdfMark[];
 }
 
 /**
@@ -181,6 +189,270 @@ export const convertAdfToPlainText = (adf: unknown): string => {
   }
 
   return '';
+};
+
+// ============================================================
+// ADF → Markdown 変換（Confluence と同じ TurndownService を使用）
+// ============================================================
+
+/**
+ * HTML 特殊文字をエスケープする
+ *
+ * @param text エスケープ対象の文字列
+ * @returns エスケープ済み文字列
+ */
+const escapeHtml = (text: string): string => {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+};
+
+/**
+ * ADF マークを HTML タグで囲む
+ *
+ * @param text 対象のテキスト
+ * @param marks 適用するマーク配列
+ * @returns マークを適用した HTML
+ */
+const applyMarksToHtml = (text: string, marks: readonly AdfMark[]): string => {
+  let result = text;
+
+  for (const mark of marks) {
+    switch (mark.type) {
+      case 'strong':
+        result = `<strong>${result}</strong>`;
+        break;
+      case 'em':
+        result = `<em>${result}</em>`;
+        break;
+      case 'code':
+        result = `<code>${result}</code>`;
+        break;
+      case 'strike':
+        result = `<s>${result}</s>`;
+        break;
+      case 'underline':
+        result = `<u>${result}</u>`;
+        break;
+      case 'link': {
+        const href = mark.attrs?.['href'];
+        if (typeof href === 'string') {
+          result = `<a href="${escapeHtml(href)}">${result}</a>`;
+        }
+        break;
+      }
+      case 'textColor': {
+        const color = mark.attrs?.['color'];
+        if (typeof color === 'string') {
+          result = `<span style="color: ${escapeHtml(color)}">${result}</span>`;
+        }
+        break;
+      }
+      case 'subsup': {
+        const subType = mark.attrs?.['type'];
+        if (subType === 'sub') {
+          result = `<sub>${result}</sub>`;
+        } else if (subType === 'sup') {
+          result = `<sup>${result}</sup>`;
+        }
+        break;
+      }
+      // 未知のマークタイプは無視
+      default:
+        break;
+    }
+  }
+
+  return result;
+};
+
+/**
+ * ADF ノードを HTML に変換する
+ *
+ * @param node ADF ノード
+ * @param attachmentPaths 添付ファイル ID → ローカルパスのマッピング
+ * @returns HTML 文字列
+ */
+const convertAdfNodeToHtml = (node: AdfNode, attachmentPaths?: AttachmentPathMapping): string => {
+  // テキストノードの場合
+  if (node.type === 'text' && node.text !== undefined) {
+    const escapedText = escapeHtml(node.text);
+    if (node.marks !== undefined && node.marks.length > 0) {
+      return applyMarksToHtml(escapedText, node.marks);
+    }
+    return escapedText;
+  }
+
+  // hardBreak の場合
+  if (node.type === 'hardBreak') {
+    return '<br>';
+  }
+
+  // rule（水平線）の場合
+  if (node.type === 'rule') {
+    return '<hr>';
+  }
+
+  // メンションの場合
+  if (node.type === 'mention' && node.attrs !== undefined) {
+    const text = node.attrs['text'];
+    if (typeof text === 'string') {
+      return escapeHtml(text);
+    }
+    return '@ユーザー';
+  }
+
+  // 絵文字の場合
+  if (node.type === 'emoji' && node.attrs !== undefined) {
+    const text = node.attrs['text'];
+    const shortName = node.attrs['shortName'];
+    if (typeof text === 'string') {
+      return text;
+    }
+    if (typeof shortName === 'string') {
+      return shortName;
+    }
+    return '';
+  }
+
+  // media ノードの場合（添付ファイル）
+  if (node.type === 'media' && node.attrs !== undefined) {
+    const mediaId = node.attrs['id'];
+    const mediaType = node.attrs['type'];
+
+    if (typeof mediaId === 'string' && attachmentPaths?.[mediaId] !== undefined) {
+      const localPath = attachmentPaths[mediaId];
+      const alt = typeof node.attrs['alt'] === 'string' ? node.attrs['alt'] : mediaId;
+      return `<img src="${escapeHtml(localPath)}" alt="${escapeHtml(alt)}">`;
+    }
+
+    // 外部リンクの場合
+    if (mediaType === 'external' || mediaType === 'link') {
+      const url = node.attrs['url'];
+      if (typeof url === 'string') {
+        return `<img src="${escapeHtml(url)}" alt="">`;
+      }
+    }
+
+    // マッピングがない場合はプレースホルダー
+    return '[添付ファイル]';
+  }
+
+  // mediaSingle（メディアコンテナ）の場合
+  if (node.type === 'mediaSingle' && node.content !== undefined) {
+    return node.content.map((child) => convertAdfNodeToHtml(child, attachmentPaths)).join('');
+  }
+
+  // mediaGroup の場合
+  if (node.type === 'mediaGroup' && node.content !== undefined) {
+    return node.content.map((child) => convertAdfNodeToHtml(child, attachmentPaths)).join('');
+  }
+
+  // inlineCard（インラインリンク）の場合
+  if (node.type === 'inlineCard' && node.attrs !== undefined) {
+    const url = node.attrs['url'];
+    if (typeof url === 'string') {
+      return `<a href="${escapeHtml(url)}">${escapeHtml(url)}</a>`;
+    }
+    return '';
+  }
+
+  // blockCard（ブロックリンク）の場合
+  if (node.type === 'blockCard' && node.attrs !== undefined) {
+    const url = node.attrs['url'];
+    if (typeof url === 'string') {
+      return `<p><a href="${escapeHtml(url)}">${escapeHtml(url)}</a></p>`;
+    }
+    return '';
+  }
+
+  // 子ノードがある場合
+  if (node.content !== undefined && Array.isArray(node.content)) {
+    const childrenHtml = node.content.map((child) => convertAdfNodeToHtml(child, attachmentPaths)).join('');
+
+    switch (node.type) {
+      case 'doc':
+        return childrenHtml;
+
+      case 'paragraph':
+        return `<p>${childrenHtml}</p>`;
+
+      case 'heading': {
+        const level = typeof node.attrs?.['level'] === 'number' ? node.attrs['level'] : 1;
+        const safeLevel = Math.max(1, Math.min(6, level));
+        return `<h${safeLevel}>${childrenHtml}</h${safeLevel}>`;
+      }
+
+      case 'bulletList':
+        return `<ul>${childrenHtml}</ul>`;
+
+      case 'orderedList':
+        return `<ol>${childrenHtml}</ol>`;
+
+      case 'listItem':
+        return `<li>${childrenHtml}</li>`;
+
+      case 'blockquote':
+        return `<blockquote>${childrenHtml}</blockquote>`;
+
+      case 'codeBlock': {
+        const language = typeof node.attrs?.['language'] === 'string' ? node.attrs['language'] : '';
+        const langClass = language ? ` class="language-${escapeHtml(language)}"` : '';
+        // コードブロック内のテキストは子ノードから取得
+        const codeText = node.content
+          .map((child) => (child.type === 'text' && child.text !== undefined ? child.text : ''))
+          .join('');
+        return `<pre><code${langClass}>${escapeHtml(codeText)}</code></pre>`;
+      }
+
+      case 'table':
+        return `<table>${childrenHtml}</table>`;
+
+      case 'tableRow':
+        return `<tr>${childrenHtml}</tr>`;
+
+      case 'tableHeader':
+        return `<th>${childrenHtml}</th>`;
+
+      case 'tableCell':
+        return `<td>${childrenHtml}</td>`;
+
+      case 'panel': {
+        // panel タイプを GitHub Alerts 形式に変換
+        const panelType = typeof node.attrs?.['panelType'] === 'string' ? node.attrs['panelType'] : 'info';
+        const alertTypeMap: Record<string, string> = {
+          error: 'WARNING',
+          info: 'NOTE',
+          note: 'NOTE',
+          success: 'TIP',
+          warning: 'WARNING',
+        };
+        const alertType = alertTypeMap[panelType] || 'NOTE';
+        return `<blockquote data-github-alert="${alertType}">${childrenHtml}</blockquote>`;
+      }
+
+      // 未知のノードタイプは子ノードの内容を返す
+      default:
+        return childrenHtml;
+    }
+  }
+
+  // 子ノードもテキストもない場合は空文字列
+  return '';
+};
+
+/**
+ * ADF ドキュメントを HTML に変換する
+ *
+ * @param content ADF ドキュメントのコンテンツ配列
+ * @param attachmentPaths 添付ファイル ID → ローカルパスのマッピング
+ * @returns HTML 文字列
+ */
+const convertAdfContentToHtml = (content: readonly AdfNode[], attachmentPaths?: AttachmentPathMapping): string => {
+  return content.map((node) => convertAdfNodeToHtml(node, attachmentPaths)).join('');
 };
 
 /**
@@ -456,25 +728,12 @@ const preprocessHtmlForMarkdown = (html: string, attachmentPaths?: AttachmentPat
 };
 
 /**
- * Confluence Storage Format（XHTML）を Markdown に変換する
+ * TurndownService インスタンスを作成する（共通設定）
+ * Jira ADF と Confluence Storage Format の両方で使用する
  *
- * @param storageFormat Storage Format 文字列（HTML/XHTML）
- * @param attachmentPaths 添付ファイル名 → ローカルパスのマッピング
- * @returns Markdown 文字列
+ * @returns 設定済みの TurndownService インスタンス
  */
-export const convertStorageFormatToMarkdown = (
-  storageFormat: string | null | undefined,
-  attachmentPaths?: AttachmentPathMapping,
-): string => {
-  // null または undefined の場合は空文字列を返す
-  if (storageFormat === null || storageFormat === undefined || storageFormat === '') {
-    return '';
-  }
-
-  // 前処理
-  const preprocessedHtml = preprocessHtmlForMarkdown(storageFormat, attachmentPaths);
-
-  // Turndown インスタンス作成
+const createTurndownService = (): TurndownService => {
   const turndownService = new TurndownService({
     bulletListMarker: '-',
     codeBlockStyle: 'fenced',
@@ -486,9 +745,7 @@ export const convertStorageFormatToMarkdown = (
   // GFM プラグイン（テーブル、取り消し線など）を使用
   turndownService.use(gfm);
 
-  // --------------------------------------------------
   // カスタムルール: キャプション付き画像（<figure>）
-  // --------------------------------------------------
   turndownService.addRule('figureWithCaption', {
     filter: (node) => {
       return node.nodeName === 'FIGURE';
@@ -515,9 +772,7 @@ export const convertStorageFormatToMarkdown = (
     },
   });
 
-  // --------------------------------------------------
   // カスタムルール: GitHub Alerts（<blockquote data-github-alert="...">）
-  // --------------------------------------------------
   turndownService.addRule('githubAlerts', {
     filter: (node) => {
       if (node.nodeName !== 'BLOCKQUOTE') return false;
@@ -538,9 +793,7 @@ export const convertStorageFormatToMarkdown = (
     },
   });
 
-  // --------------------------------------------------
   // カスタムルール: 色変更テキスト（HTML のまま出力）
-  // --------------------------------------------------
   turndownService.addRule('coloredText', {
     filter: (node) => {
       if (node.nodeName !== 'SPAN') return false;
@@ -553,9 +806,7 @@ export const convertStorageFormatToMarkdown = (
     },
   });
 
-  // --------------------------------------------------
   // カスタムルール: セル結合/セル内改行のあるテーブル（HTML のまま出力）
-  // --------------------------------------------------
   turndownService.addRule('complexTable', {
     filter: (node) => {
       if (node.nodeName !== 'TABLE') return false;
@@ -567,6 +818,75 @@ export const convertStorageFormatToMarkdown = (
       return (node as Element).outerHTML;
     },
   });
+
+  return turndownService;
+};
+
+/**
+ * ADF（Atlassian Document Format）を Markdown に変換する
+ *
+ * @param adf ADF ドキュメント（オブジェクトまたは JSON 文字列）
+ * @param attachmentPaths 添付ファイル ID → ローカルパスのマッピング
+ * @returns Markdown 文字列
+ */
+export const convertAdfToMarkdown = (adf: unknown, attachmentPaths?: AttachmentPathMapping): string => {
+  // null または undefined の場合は空文字列を返す
+  if (adf === null || adf === undefined) {
+    return '';
+  }
+
+  // 文字列の場合は JSON としてパースを試みる
+  if (typeof adf === 'string') {
+    // 空文字列の場合
+    if (adf === '') {
+      return '';
+    }
+    try {
+      const parsed = JSON.parse(adf);
+      if (isAdfDocument(parsed)) {
+        const html = convertAdfContentToHtml(parsed.content, attachmentPaths);
+        const turndownService = createTurndownService();
+        return turndownService.turndown(html).trim();
+      }
+    } catch {
+      // JSON パースに失敗した場合は元の文字列を返す
+      return adf;
+    }
+    // パースできたが ADF 形式でない場合は元の文字列を返す
+    return adf;
+  }
+
+  // オブジェクトの場合は ADF ドキュメントとして処理
+  if (isAdfDocument(adf)) {
+    const html = convertAdfContentToHtml(adf.content, attachmentPaths);
+    const turndownService = createTurndownService();
+    return turndownService.turndown(html).trim();
+  }
+
+  return '';
+};
+
+/**
+ * Confluence Storage Format（XHTML）を Markdown に変換する
+ *
+ * @param storageFormat Storage Format 文字列（HTML/XHTML）
+ * @param attachmentPaths 添付ファイル名 → ローカルパスのマッピング
+ * @returns Markdown 文字列
+ */
+export const convertStorageFormatToMarkdown = (
+  storageFormat: string | null | undefined,
+  attachmentPaths?: AttachmentPathMapping,
+): string => {
+  // null または undefined の場合は空文字列を返す
+  if (storageFormat === null || storageFormat === undefined || storageFormat === '') {
+    return '';
+  }
+
+  // 前処理
+  const preprocessedHtml = preprocessHtmlForMarkdown(storageFormat, attachmentPaths);
+
+  // 共通の TurndownService を使用
+  const turndownService = createTurndownService();
 
   // Markdown に変換
   const markdown = turndownService.turndown(preprocessedHtml);

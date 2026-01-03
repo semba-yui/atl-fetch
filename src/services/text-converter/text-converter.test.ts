@@ -9,6 +9,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  convertAdfToMarkdown,
   convertAdfToPlainText,
   convertStorageFormatToMarkdown,
   convertStorageFormatToPlainText,
@@ -967,6 +968,480 @@ describe('convertAdfToPlainText', () => {
 
       // Then: 元の文字列が返される
       expect(result).toBe(adf);
+    });
+  });
+});
+
+describe('convertAdfToMarkdown', () => {
+  describe('基本的なテキストノード', () => {
+    // テストの目的: 単純なテキストノードを Markdown に変換できること
+    it('Given: 単純なテキストを含む ADF, When: convertAdfToMarkdown を呼び出す, Then: Markdown テキストが返される', () => {
+      // Given: 単純なテキストを含む ADF
+      const adf = {
+        content: [
+          {
+            content: [{ text: 'これはテストです', type: 'text' }],
+            type: 'paragraph',
+          },
+        ],
+        type: 'doc',
+        version: 1,
+      };
+
+      // When: convertAdfToMarkdown を呼び出す
+      const result = convertAdfToMarkdown(adf);
+
+      // Then: テキストが返される
+      expect(result).toBe('これはテストです');
+    });
+
+    // テストの目的: 複数のパラグラフが正しく変換されること
+    it('Given: 複数のパラグラフを含む ADF, When: convertAdfToMarkdown を呼び出す, Then: 各パラグラフが改行で区切られる', () => {
+      // Given: 複数のパラグラフを含む ADF
+      const adf = {
+        content: [
+          { content: [{ text: '1行目', type: 'text' }], type: 'paragraph' },
+          { content: [{ text: '2行目', type: 'text' }], type: 'paragraph' },
+        ],
+        type: 'doc',
+        version: 1,
+      };
+
+      // When: convertAdfToMarkdown を呼び出す
+      const result = convertAdfToMarkdown(adf);
+
+      // Then: 各パラグラフが改行で区切られる
+      expect(result).toContain('1行目');
+      expect(result).toContain('2行目');
+    });
+  });
+
+  describe('テキスト装飾（マーク）', () => {
+    // テストの目的: 太字マークが Markdown の強調記法に変換されること
+    it('Given: 太字テキストを含む ADF, When: convertAdfToMarkdown を呼び出す, Then: **太字** 形式に変換される', () => {
+      // Given: 太字テキストを含む ADF
+      const adf = {
+        content: [
+          {
+            content: [{ marks: [{ type: 'strong' }], text: '太字テキスト', type: 'text' }],
+            type: 'paragraph',
+          },
+        ],
+        type: 'doc',
+        version: 1,
+      };
+
+      // When: convertAdfToMarkdown を呼び出す
+      const result = convertAdfToMarkdown(adf);
+
+      // Then: **太字** 形式に変換される
+      expect(result).toBe('**太字テキスト**');
+    });
+
+    // テストの目的: 斜体マークが Markdown の強調記法に変換されること
+    it('Given: 斜体テキストを含む ADF, When: convertAdfToMarkdown を呼び出す, Then: *斜体* 形式に変換される', () => {
+      // Given: 斜体テキストを含む ADF
+      const adf = {
+        content: [
+          {
+            content: [{ marks: [{ type: 'em' }], text: '斜体テキスト', type: 'text' }],
+            type: 'paragraph',
+          },
+        ],
+        type: 'doc',
+        version: 1,
+      };
+
+      // When: convertAdfToMarkdown を呼び出す
+      const result = convertAdfToMarkdown(adf);
+
+      // Then: *斜体* 形式に変換される
+      expect(result).toBe('*斜体テキスト*');
+    });
+
+    // テストの目的: コードマークが Markdown のインラインコード記法に変換されること
+    it('Given: インラインコードを含む ADF, When: convertAdfToMarkdown を呼び出す, Then: `コード` 形式に変換される', () => {
+      // Given: インラインコードを含む ADF
+      const adf = {
+        content: [
+          {
+            content: [{ marks: [{ type: 'code' }], text: 'const x = 1', type: 'text' }],
+            type: 'paragraph',
+          },
+        ],
+        type: 'doc',
+        version: 1,
+      };
+
+      // When: convertAdfToMarkdown を呼び出す
+      const result = convertAdfToMarkdown(adf);
+
+      // Then: `コード` 形式に変換される
+      expect(result).toBe('`const x = 1`');
+    });
+
+    // テストの目的: リンクマークが Markdown のリンク記法に変換されること
+    it('Given: リンクを含む ADF, When: convertAdfToMarkdown を呼び出す, Then: [テキスト](URL) 形式に変換される', () => {
+      // Given: リンクを含む ADF
+      const adf = {
+        content: [
+          {
+            content: [
+              {
+                marks: [{ attrs: { href: 'https://example.com' }, type: 'link' }],
+                text: 'リンクテキスト',
+                type: 'text',
+              },
+            ],
+            type: 'paragraph',
+          },
+        ],
+        type: 'doc',
+        version: 1,
+      };
+
+      // When: convertAdfToMarkdown を呼び出す
+      const result = convertAdfToMarkdown(adf);
+
+      // Then: [テキスト](URL) 形式に変換される
+      expect(result).toBe('[リンクテキスト](https://example.com)');
+    });
+
+    // テストの目的: 取り消し線マークが Markdown の取り消し線記法に変換されること
+    // Note: Turndown は単一チルダ記法を使用する
+    it('Given: 取り消し線テキストを含む ADF, When: convertAdfToMarkdown を呼び出す, Then: ~テキスト~ 形式に変換される', () => {
+      // Given: 取り消し線テキストを含む ADF
+      const adf = {
+        content: [
+          {
+            content: [{ marks: [{ type: 'strike' }], text: '取り消し', type: 'text' }],
+            type: 'paragraph',
+          },
+        ],
+        type: 'doc',
+        version: 1,
+      };
+
+      // When: convertAdfToMarkdown を呼び出す
+      const result = convertAdfToMarkdown(adf);
+
+      // Then: ~テキスト~ 形式に変換される（Turndown は単一チルダを使用）
+      expect(result).toBe('~取り消し~');
+    });
+  });
+
+  describe('見出しノード', () => {
+    // テストの目的: 見出しレベル1が # に変換されること
+    it('Given: 見出しレベル1を含む ADF, When: convertAdfToMarkdown を呼び出す, Then: # 見出し 形式に変換される', () => {
+      // Given: 見出しレベル1を含む ADF
+      const adf = {
+        content: [
+          {
+            attrs: { level: 1 },
+            content: [{ text: '見出し1', type: 'text' }],
+            type: 'heading',
+          },
+        ],
+        type: 'doc',
+        version: 1,
+      };
+
+      // When: convertAdfToMarkdown を呼び出す
+      const result = convertAdfToMarkdown(adf);
+
+      // Then: # 見出し 形式に変換される
+      expect(result).toBe('# 見出し1');
+    });
+
+    // テストの目的: 見出しレベル3が ### に変換されること
+    it('Given: 見出しレベル3を含む ADF, When: convertAdfToMarkdown を呼び出す, Then: ### 見出し 形式に変換される', () => {
+      // Given: 見出しレベル3を含む ADF
+      const adf = {
+        content: [
+          {
+            attrs: { level: 3 },
+            content: [{ text: '見出し3', type: 'text' }],
+            type: 'heading',
+          },
+        ],
+        type: 'doc',
+        version: 1,
+      };
+
+      // When: convertAdfToMarkdown を呼び出す
+      const result = convertAdfToMarkdown(adf);
+
+      // Then: ### 見出し 形式に変換される
+      expect(result).toBe('### 見出し3');
+    });
+  });
+
+  describe('リストノード', () => {
+    // テストの目的: 箇条書きリストが - 記法に変換されること
+    it('Given: 箇条書きリストを含む ADF, When: convertAdfToMarkdown を呼び出す, Then: - 記法に変換される', () => {
+      // Given: 箇条書きリストを含む ADF
+      const adf = {
+        content: [
+          {
+            content: [
+              { content: [{ content: [{ text: '項目1', type: 'text' }], type: 'paragraph' }], type: 'listItem' },
+              { content: [{ content: [{ text: '項目2', type: 'text' }], type: 'paragraph' }], type: 'listItem' },
+            ],
+            type: 'bulletList',
+          },
+        ],
+        type: 'doc',
+        version: 1,
+      };
+
+      // When: convertAdfToMarkdown を呼び出す
+      const result = convertAdfToMarkdown(adf);
+
+      // Then: - 記法に変換される（Turndown のスペーシングは実装依存）
+      expect(result).toMatch(/-\s+項目1/);
+      expect(result).toMatch(/-\s+項目2/);
+    });
+
+    // テストの目的: 番号付きリストが 1. 記法に変換されること
+    it('Given: 番号付きリストを含む ADF, When: convertAdfToMarkdown を呼び出す, Then: 番号. 記法に変換される', () => {
+      // Given: 番号付きリストを含む ADF
+      const adf = {
+        content: [
+          {
+            content: [
+              { content: [{ content: [{ text: '項目1', type: 'text' }], type: 'paragraph' }], type: 'listItem' },
+              { content: [{ content: [{ text: '項目2', type: 'text' }], type: 'paragraph' }], type: 'listItem' },
+            ],
+            type: 'orderedList',
+          },
+        ],
+        type: 'doc',
+        version: 1,
+      };
+
+      // When: convertAdfToMarkdown を呼び出す
+      const result = convertAdfToMarkdown(adf);
+
+      // Then: 番号. 記法に変換される（Turndown のスペーシングは実装依存）
+      expect(result).toMatch(/1\.\s+項目1/);
+      expect(result).toMatch(/2\.\s+項目2/);
+    });
+  });
+
+  describe('コードブロック', () => {
+    // テストの目的: コードブロックがフェンスドコードブロックに変換されること
+    it('Given: コードブロックを含む ADF, When: convertAdfToMarkdown を呼び出す, Then: ```言語 形式に変換される', () => {
+      // Given: コードブロックを含む ADF
+      const adf = {
+        content: [
+          {
+            attrs: { language: 'javascript' },
+            content: [{ text: 'const x = 1;', type: 'text' }],
+            type: 'codeBlock',
+          },
+        ],
+        type: 'doc',
+        version: 1,
+      };
+
+      // When: convertAdfToMarkdown を呼び出す
+      const result = convertAdfToMarkdown(adf);
+
+      // Then: ```言語 形式に変換される
+      expect(result).toContain('```javascript');
+      expect(result).toContain('const x = 1;');
+      expect(result).toContain('```');
+    });
+  });
+
+  describe('引用ブロック', () => {
+    // テストの目的: 引用ブロックが > 記法に変換されること
+    it('Given: 引用ブロックを含む ADF, When: convertAdfToMarkdown を呼び出す, Then: > 記法に変換される', () => {
+      // Given: 引用ブロックを含む ADF
+      const adf = {
+        content: [
+          {
+            content: [{ content: [{ text: '引用テキスト', type: 'text' }], type: 'paragraph' }],
+            type: 'blockquote',
+          },
+        ],
+        type: 'doc',
+        version: 1,
+      };
+
+      // When: convertAdfToMarkdown を呼び出す
+      const result = convertAdfToMarkdown(adf);
+
+      // Then: > 記法に変換される
+      expect(result).toContain('> 引用テキスト');
+    });
+  });
+
+  describe('メンションとインライン要素', () => {
+    // テストの目的: メンションノードがテキストとして出力されること
+    it('Given: メンションを含む ADF, When: convertAdfToMarkdown を呼び出す, Then: メンションテキストが出力される', () => {
+      // Given: メンションを含む ADF
+      const adf = {
+        content: [
+          {
+            content: [
+              { text: 'Hello ', type: 'text' },
+              { attrs: { id: 'user123', text: '@田中太郎' }, type: 'mention' },
+              { text: '!', type: 'text' },
+            ],
+            type: 'paragraph',
+          },
+        ],
+        type: 'doc',
+        version: 1,
+      };
+
+      // When: convertAdfToMarkdown を呼び出す
+      const result = convertAdfToMarkdown(adf);
+
+      // Then: メンションテキストが出力される
+      expect(result).toContain('Hello');
+      expect(result).toContain('@田中太郎');
+    });
+
+    // テストの目的: 絵文字ノードが出力されること
+    it('Given: 絵文字を含む ADF, When: convertAdfToMarkdown を呼び出す, Then: 絵文字が出力される', () => {
+      // Given: 絵文字を含む ADF
+      const adf = {
+        content: [
+          {
+            content: [
+              { text: 'いいね！', type: 'text' },
+              { attrs: { shortName: ':thumbsup:', text: '👍' }, type: 'emoji' },
+            ],
+            type: 'paragraph',
+          },
+        ],
+        type: 'doc',
+        version: 1,
+      };
+
+      // When: convertAdfToMarkdown を呼び出す
+      const result = convertAdfToMarkdown(adf);
+
+      // Then: 絵文字が出力される
+      expect(result).toContain('いいね！');
+      expect(result).toContain('👍');
+    });
+  });
+
+  describe('null / undefined / 空文字列のハンドリング', () => {
+    // テストの目的: null 値で空文字列が返されること
+    it('Given: null, When: convertAdfToMarkdown を呼び出す, Then: 空文字列が返される', () => {
+      // Given: null
+      const adf = null;
+
+      // When: convertAdfToMarkdown を呼び出す
+      const result = convertAdfToMarkdown(adf);
+
+      // Then: 空文字列が返される
+      expect(result).toBe('');
+    });
+
+    // テストの目的: undefined 値で空文字列が返されること
+    it('Given: undefined, When: convertAdfToMarkdown を呼び出す, Then: 空文字列が返される', () => {
+      // Given: undefined
+      const adf = undefined;
+
+      // When: convertAdfToMarkdown を呼び出す
+      const result = convertAdfToMarkdown(adf);
+
+      // Then: 空文字列が返される
+      expect(result).toBe('');
+    });
+
+    // テストの目的: 空文字列で空文字列が返されること
+    it('Given: 空文字列, When: convertAdfToMarkdown を呼び出す, Then: 空文字列が返される', () => {
+      // Given: 空文字列
+      const adf = '';
+
+      // When: convertAdfToMarkdown を呼び出す
+      const result = convertAdfToMarkdown(adf);
+
+      // Then: 空文字列が返される
+      expect(result).toBe('');
+    });
+  });
+
+  describe('JSON 文字列入力', () => {
+    // テストの目的: JSON 文字列が正しくパースされて Markdown に変換されること
+    it('Given: JSON 文字列形式の ADF, When: convertAdfToMarkdown を呼び出す, Then: Markdown に変換される', () => {
+      // Given: JSON 文字列形式の ADF
+      const adf = JSON.stringify({
+        content: [{ content: [{ text: 'JSONからの変換', type: 'text' }], type: 'paragraph' }],
+        type: 'doc',
+        version: 1,
+      });
+
+      // When: convertAdfToMarkdown を呼び出す
+      const result = convertAdfToMarkdown(adf);
+
+      // Then: Markdown に変換される
+      expect(result).toBe('JSONからの変換');
+    });
+
+    // テストの目的: 無効な JSON 文字列は元の文字列が返されること
+    it('Given: 無効な JSON 文字列, When: convertAdfToMarkdown を呼び出す, Then: 元の文字列が返される', () => {
+      // Given: 無効な JSON 文字列
+      const adf = 'これはプレーンテキストです';
+
+      // When: convertAdfToMarkdown を呼び出す
+      const result = convertAdfToMarkdown(adf);
+
+      // Then: 元の文字列が返される
+      expect(result).toBe('これはプレーンテキストです');
+    });
+  });
+
+  describe('テーブル', () => {
+    // テストの目的: テーブルが Markdown 形式に変換されること
+    it('Given: テーブルを含む ADF, When: convertAdfToMarkdown を呼び出す, Then: Markdown テーブルに変換される', () => {
+      // Given: テーブルを含む ADF
+      const adf = {
+        content: [
+          {
+            content: [
+              {
+                content: [
+                  {
+                    content: [{ content: [{ text: 'ヘッダ1', type: 'text' }], type: 'paragraph' }],
+                    type: 'tableHeader',
+                  },
+                  {
+                    content: [{ content: [{ text: 'ヘッダ2', type: 'text' }], type: 'paragraph' }],
+                    type: 'tableHeader',
+                  },
+                ],
+                type: 'tableRow',
+              },
+              {
+                content: [
+                  { content: [{ content: [{ text: 'データ1', type: 'text' }], type: 'paragraph' }], type: 'tableCell' },
+                  { content: [{ content: [{ text: 'データ2', type: 'text' }], type: 'paragraph' }], type: 'tableCell' },
+                ],
+                type: 'tableRow',
+              },
+            ],
+            type: 'table',
+          },
+        ],
+        type: 'doc',
+        version: 1,
+      };
+
+      // When: convertAdfToMarkdown を呼び出す
+      const result = convertAdfToMarkdown(adf);
+
+      // Then: テーブル形式で出力される
+      expect(result).toContain('ヘッダ1');
+      expect(result).toContain('ヘッダ2');
+      expect(result).toContain('データ1');
+      expect(result).toContain('データ2');
     });
   });
 });
