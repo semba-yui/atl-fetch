@@ -12,6 +12,8 @@
     "got": "catalog:",
     "jsdom": "catalog:",
     "neverthrow": "catalog:",
+    "ora": "catalog:",
+    "picocolors": "catalog:",
     "turndown": "catalog:",
     "turndown-plugin-gfm": "catalog:",
     "yaml": "catalog:",
@@ -104,5 +106,5 @@
   },
   "type": "module",
   "types": "./dist/index.d.ts",
-  "version": "1.0.0"
+  "version": "1.1.0"
 }

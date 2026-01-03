@@ -42,6 +42,8 @@ pnpm run test
 src/
 ├── index.ts           # エントリーポイント
 ├── cli/               # CLI 定義（yargs）
+│   ├── cli.ts         # メイン CLI 定義
+│   └── spinner.ts     # スピナー・進捗表示ユーティリティ
 ├── services/          # ビジネスロジック
 │   ├── auth/          # 認証
 │   ├── confluence/    # Confluence API
