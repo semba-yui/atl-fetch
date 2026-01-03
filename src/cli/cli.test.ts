@@ -548,4 +548,204 @@ describe('CLI', () => {
       expect(argv.color).toBe(false);
     });
   });
+
+  describe('--verbose オプション', () => {
+    // --verbose オプションで詳細出力を有効にできることを確認するテスト
+    it('--verbose オプションで詳細出力を有効にする', async () => {
+      // Given: --verbose が指定されている
+      const args = ['https://example.atlassian.net/browse/PROJ-123', '--verbose'];
+
+      // When: CLI をパースする
+      const cli = createCli();
+      const argv = await cli.parse(args);
+
+      // Then: verbose が true になる
+      expect(argv.verbose).toBe(true);
+    });
+
+    // -v オプションでも指定できることを確認するテスト
+    it('-v オプションでも指定できる', async () => {
+      // Given: -v が指定されている
+      const args = ['https://example.atlassian.net/browse/PROJ-123', '-v'];
+
+      // When: CLI をパースする
+      const cli = createCli();
+      const argv = await cli.parse(args);
+
+      // Then: verbose が true になる
+      expect(argv.verbose).toBe(true);
+    });
+
+    // verbose のデフォルト値が false であることを確認するテスト
+    it('デフォルトでは verbose は false', async () => {
+      // Given: verbose オプションが指定されていない
+      const args = ['https://example.atlassian.net/browse/PROJ-123'];
+
+      // When: CLI をパースする
+      const cli = createCli();
+      const argv = await cli.parse(args);
+
+      // Then: verbose は false
+      expect(argv.verbose).toBe(false);
+    });
+
+    // --verbose=true を明示的に指定できることを確認するテスト
+    it('--verbose=true を明示的に指定できる', async () => {
+      // Given: --verbose=true が指定されている
+      const args = ['https://example.atlassian.net/browse/PROJ-123', '--verbose=true'];
+
+      // When: CLI をパースする
+      const cli = createCli();
+      const argv = await cli.parse(args);
+
+      // Then: verbose が true になる
+      expect(argv.verbose).toBe(true);
+    });
+
+    // --verbose=false を明示的に指定できることを確認するテスト
+    it('--verbose=false を明示的に指定できる', async () => {
+      // Given: --verbose=false が指定されている
+      const args = ['https://example.atlassian.net/browse/PROJ-123', '--verbose=false'];
+
+      // When: CLI をパースする
+      const cli = createCli();
+      const argv = await cli.parse(args);
+
+      // Then: verbose が false になる
+      expect(argv.verbose).toBe(false);
+    });
+  });
+
+  describe('--debug オプション', () => {
+    // --debug オプションでデバッグ出力を有効にできることを確認するテスト
+    it('--debug オプションでデバッグ出力を有効にする', async () => {
+      // Given: --debug が指定されている
+      const args = ['https://example.atlassian.net/browse/PROJ-123', '--debug'];
+
+      // When: CLI をパースする
+      const cli = createCli();
+      const argv = await cli.parse(args);
+
+      // Then: debug が true になる
+      expect(argv.debug).toBe(true);
+    });
+
+    // debug のデフォルト値が false であることを確認するテスト
+    it('デフォルトでは debug は false', async () => {
+      // Given: debug オプションが指定されていない
+      const args = ['https://example.atlassian.net/browse/PROJ-123'];
+
+      // When: CLI をパースする
+      const cli = createCli();
+      const argv = await cli.parse(args);
+
+      // Then: debug は false
+      expect(argv.debug).toBe(false);
+    });
+
+    // --debug=true を明示的に指定できることを確認するテスト
+    it('--debug=true を明示的に指定できる', async () => {
+      // Given: --debug=true が指定されている
+      const args = ['https://example.atlassian.net/browse/PROJ-123', '--debug=true'];
+
+      // When: CLI をパースする
+      const cli = createCli();
+      const argv = await cli.parse(args);
+
+      // Then: debug が true になる
+      expect(argv.debug).toBe(true);
+    });
+
+    // --debug=false を明示的に指定できることを確認するテスト
+    it('--debug=false を明示的に指定できる', async () => {
+      // Given: --debug=false が指定されている
+      const args = ['https://example.atlassian.net/browse/PROJ-123', '--debug=false'];
+
+      // When: CLI をパースする
+      const cli = createCli();
+      const argv = await cli.parse(args);
+
+      // Then: debug が false になる
+      expect(argv.debug).toBe(false);
+    });
+  });
+
+  describe('--verbose と --debug の組み合わせ', () => {
+    // 両方のオプションを同時に指定できることを確認するテスト
+    it('--verbose と --debug を同時に指定できる', async () => {
+      // Given: --verbose と --debug が指定されている
+      const args = ['https://example.atlassian.net/browse/PROJ-123', '--verbose', '--debug'];
+
+      // When: CLI をパースする
+      const cli = createCli();
+      const argv = await cli.parse(args);
+
+      // Then: 両方が true になる
+      expect(argv.verbose).toBe(true);
+      expect(argv.debug).toBe(true);
+    });
+
+    // 短縮形 -v と --debug を同時に指定できることを確認するテスト
+    it('-v と --debug を同時に指定できる', async () => {
+      // Given: -v と --debug が指定されている
+      const args = ['https://example.atlassian.net/browse/PROJ-123', '-v', '--debug'];
+
+      // When: CLI をパースする
+      const cli = createCli();
+      const argv = await cli.parse(args);
+
+      // Then: 両方が true になる
+      expect(argv.verbose).toBe(true);
+      expect(argv.debug).toBe(true);
+    });
+  });
+
+  describe('デフォルトオプション（新規追加分）', () => {
+    // 新しいデフォルトオプション値の検証テスト
+    it('verbose と debug のデフォルト値が設定されている', async () => {
+      // Given: URL のみが指定されている
+      const args = ['https://example.atlassian.net/browse/PROJ-123'];
+
+      // When: CLI をパースする
+      const cli = createCli();
+      const argv = await cli.parse(args);
+
+      // Then: デフォルト値が設定されている
+      expect(argv.verbose).toBe(false);
+      expect(argv.debug).toBe(false);
+    });
+  });
+
+  describe('すべてのオプションの複合テスト', () => {
+    // すべてのオプションを同時に指定できることを確認するテスト
+    it('すべてのオプションを同時に指定できる', async () => {
+      // Given: すべてのオプションが指定されている
+      const args = [
+        'https://example.atlassian.net/browse/PROJ-123',
+        '--format',
+        'markdown',
+        '--download',
+        '--dir',
+        '/tmp/output',
+        '--diff',
+        '--no-color',
+        '--verbose',
+        '--debug',
+      ];
+
+      // When: CLI をパースする
+      const cli = createCli();
+      const argv = await cli.parse(args);
+
+      // Then: すべてのオプションが正しく設定される
+      expect(argv.url).toBe('https://example.atlassian.net/browse/PROJ-123');
+      expect(argv.format).toBe('markdown');
+      expect(argv.download).toBe(true);
+      expect(argv.dir).toBe('/tmp/output');
+      expect(argv.diff).toBe(true);
+      expect(argv.color).toBe(false);
+      expect(argv.verbose).toBe(true);
+      expect(argv.debug).toBe(true);
+    });
+  });
 });
