@@ -103,9 +103,9 @@ export interface JiraSaveData {
   readonly key: string;
   /** Issue タイトル（要約） */
   readonly summary: string;
-  /** Issue 説明（null の場合は説明なし） */
-  readonly description: string | null;
-  /** 説明のプレーンテキスト（null の場合は説明なし） */
+  /** Issue 説明（ADF 形式、null の場合は説明なし） */
+  readonly description: unknown;
+  /** 説明のプレーンテキスト（null の場合は説明なし、後方互換性のため維持） */
   readonly descriptionPlainText: string | null;
   /** コメント一覧 */
   readonly comments: readonly JiraComment[];

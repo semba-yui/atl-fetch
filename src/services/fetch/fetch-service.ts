@@ -7,7 +7,7 @@ import { fetchConfluencePage } from '../confluence/confluence-service.js';
 import { fetchJiraIssue } from '../jira/jira-service.js';
 import { formatConfluencePage, formatJiraIssue, writeToFile } from '../output/output-service.js';
 import { saveConfluencePage, saveConfluenceVersions, saveJiraIssue } from '../storage/storage-service.js';
-import { convertAdfToPlainText, convertStorageFormatToPlainText } from '../text-converter/text-converter.js';
+import { convertStorageFormatToPlainText } from '../text-converter/text-converter.js';
 import { parseUrl } from '../url-parser/url-parser.js';
 
 /**
@@ -256,17 +256,15 @@ export async function fetchAndSave(
 
     const issue = issueResult.value;
 
-    // ADF をプレーンテキストに変換
-    const descriptionPlainText = issue.description !== null ? convertAdfToPlainText(issue.description) : null;
-
     // Jira Issue をディレクトリ構造で保存
+    // description は ADF 形式で保存、descriptionPlainText は後方互換性のため維持
     const saveResult = await saveJiraIssue(
       {
         attachments: issue.attachments,
         changelog: issue.changelog,
         comments: issue.comments,
-        description: issue.description,
-        descriptionPlainText,
+        description: issue.descriptionAdf,
+        descriptionPlainText: issue.description,
         key: issue.key,
         summary: issue.summary,
       },

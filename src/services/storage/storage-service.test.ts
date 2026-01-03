@@ -116,6 +116,11 @@ describe('saveJiraIssue', () => {
         {
           author: 'テストユーザー',
           body: 'これはコメントです',
+          bodyAdf: {
+            content: [{ content: [{ text: 'これはコメントです', type: 'text' }], type: 'paragraph' }],
+            type: 'doc',
+            version: 1,
+          },
           created: '2024-01-01T12:00:00.000Z',
           id: 'comment-1',
           updated: '2024-01-01T12:00:00.000Z',
@@ -297,6 +302,11 @@ describe('saveJiraIssue', () => {
         {
           author: 'Commenter1',
           body: '最初のコメント',
+          bodyAdf: {
+            content: [{ content: [{ text: '最初のコメント', type: 'text' }], type: 'paragraph' }],
+            type: 'doc',
+            version: 1,
+          },
           created: '2024-01-01T10:00:00.000Z',
           id: 'c-1',
           updated: '2024-01-01T10:00:00.000Z',
@@ -304,6 +314,11 @@ describe('saveJiraIssue', () => {
         {
           author: 'Commenter2',
           body: '返信コメント',
+          bodyAdf: {
+            content: [{ content: [{ text: '返信コメント', type: 'text' }], type: 'paragraph' }],
+            type: 'doc',
+            version: 1,
+          },
           created: '2024-01-01T11:00:00.000Z',
           id: 'c-2',
           updated: '2024-01-01T12:00:00.000Z',
@@ -391,6 +406,195 @@ describe('saveJiraIssue', () => {
         expect(attData[0].mimeType).toBe('image/png');
         expect(attData[0].size).toBe(1024);
         expect(attData[1].filename).toBe('document.pdf');
+      }
+    });
+  });
+
+  describe('comments.md の生成', () => {
+    // テストの目的: コメント一覧が Markdown 形式で保存されること
+    it('Given: コメントを含む Issue データ, When: saveJiraIssue を呼び出す, Then: comments.md が生成される', async () => {
+      // Given: コメントを含む Issue データ
+      const comments: JiraComment[] = [
+        {
+          author: 'CommentAuthor1',
+          body: 'これは最初のコメントです',
+          bodyAdf: {
+            content: [{ content: [{ text: 'これは最初のコメントです', type: 'text' }], type: 'paragraph' }],
+            type: 'doc',
+            version: 1,
+          },
+          created: '2024-01-15T10:30:00.000Z',
+          id: 'cmt-1',
+          updated: '2024-01-15T10:30:00.000Z',
+        },
+        {
+          author: 'CommentAuthor2',
+          body: '返信です',
+          bodyAdf: {
+            content: [{ content: [{ text: '返信です', type: 'text' }], type: 'paragraph' }],
+            type: 'doc',
+            version: 1,
+          },
+          created: '2024-01-16T14:20:00.000Z',
+          id: 'cmt-2',
+          updated: '2024-01-16T14:20:00.000Z',
+        },
+      ];
+      const data: JiraSaveData = {
+        attachments: [],
+        changelog: [],
+        comments,
+        description: null,
+        descriptionPlainText: null,
+        key: 'TEST-CMT-MD',
+        summary: 'コメント Markdown テスト',
+      };
+      const options: JiraStorageOptions = {
+        baseDir: testDir,
+        cliVersion: TEST_CLI_VERSION,
+        sourceUrl: 'https://example.atlassian.net/browse/TEST-CMT-MD',
+      };
+
+      // When: saveJiraIssue を呼び出す
+      const result = await saveJiraIssue(data, options);
+
+      // Then: comments.md が生成される
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
+        const commentsPath = join(result.value.directory, 'comments.md');
+        const commentsContent = await readFile(commentsPath, 'utf-8');
+
+        // タイトルが含まれること
+        expect(commentsContent).toContain('# TEST-CMT-MD - Comments');
+        // コメント作成者が含まれること
+        expect(commentsContent).toContain('CommentAuthor1');
+        expect(commentsContent).toContain('CommentAuthor2');
+        // コメント本文が含まれること
+        expect(commentsContent).toContain('これは最初のコメントです');
+        expect(commentsContent).toContain('返信です');
+      }
+    });
+
+    // テストの目的: コメントがない場合は "No comments" が出力されること
+    it('Given: コメントがない Issue データ, When: saveJiraIssue を呼び出す, Then: comments.md に "No comments" が出力される', async () => {
+      // Given: コメントがない Issue データ
+      const data: JiraSaveData = {
+        attachments: [],
+        changelog: [],
+        comments: [],
+        description: null,
+        descriptionPlainText: null,
+        key: 'TEST-NO-CMT',
+        summary: 'コメントなしテスト',
+      };
+      const options: JiraStorageOptions = {
+        baseDir: testDir,
+        cliVersion: TEST_CLI_VERSION,
+        sourceUrl: 'https://example.atlassian.net/browse/TEST-NO-CMT',
+      };
+
+      // When: saveJiraIssue を呼び出す
+      const result = await saveJiraIssue(data, options);
+
+      // Then: comments.md に "No comments" が出力される
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
+        const commentsPath = join(result.value.directory, 'comments.md');
+        const commentsContent = await readFile(commentsPath, 'utf-8');
+
+        expect(commentsContent).toContain('No comments');
+      }
+    });
+  });
+
+  describe('changelog.md の生成', () => {
+    // テストの目的: 変更履歴が Markdown 形式で保存されること
+    it('Given: 変更履歴を含む Issue データ, When: saveJiraIssue を呼び出す, Then: changelog.md が生成される', async () => {
+      // Given: 変更履歴を含む Issue データ
+      const changelog: JiraChangelogEntry[] = [
+        {
+          author: 'ChangeAuthor1',
+          created: '2024-01-15T10:00:00.000Z',
+          id: 'cl-1',
+          items: [
+            { field: 'status', fromString: 'Open', toString: 'In Progress' },
+            { field: 'assignee', fromString: null, toString: 'Developer' },
+          ],
+        },
+        {
+          author: 'ChangeAuthor2',
+          created: '2024-01-16T14:00:00.000Z',
+          id: 'cl-2',
+          items: [{ field: 'priority', fromString: 'Low', toString: 'High' }],
+        },
+      ];
+      const data: JiraSaveData = {
+        attachments: [],
+        changelog,
+        comments: [],
+        description: null,
+        descriptionPlainText: null,
+        key: 'TEST-CL-MD',
+        summary: '変更履歴 Markdown テスト',
+      };
+      const options: JiraStorageOptions = {
+        baseDir: testDir,
+        cliVersion: TEST_CLI_VERSION,
+        sourceUrl: 'https://example.atlassian.net/browse/TEST-CL-MD',
+      };
+
+      // When: saveJiraIssue を呼び出す
+      const result = await saveJiraIssue(data, options);
+
+      // Then: changelog.md が生成される
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
+        const changelogPath = join(result.value.directory, 'changelog.md');
+        const changelogContent = await readFile(changelogPath, 'utf-8');
+
+        // タイトルが含まれること
+        expect(changelogContent).toContain('# TEST-CL-MD - Changelog');
+        // 変更者が含まれること
+        expect(changelogContent).toContain('ChangeAuthor1');
+        expect(changelogContent).toContain('ChangeAuthor2');
+        // 変更フィールドが含まれること
+        expect(changelogContent).toContain('status');
+        expect(changelogContent).toContain('Open');
+        expect(changelogContent).toContain('In Progress');
+        // null 値が (empty) として表示されること
+        expect(changelogContent).toContain('(empty)');
+        expect(changelogContent).toContain('Developer');
+      }
+    });
+
+    // テストの目的: 変更履歴がない場合は "No changelog" が出力されること
+    it('Given: 変更履歴がない Issue データ, When: saveJiraIssue を呼び出す, Then: changelog.md に "No changelog" が出力される', async () => {
+      // Given: 変更履歴がない Issue データ
+      const data: JiraSaveData = {
+        attachments: [],
+        changelog: [],
+        comments: [],
+        description: null,
+        descriptionPlainText: null,
+        key: 'TEST-NO-CL',
+        summary: '変更履歴なしテスト',
+      };
+      const options: JiraStorageOptions = {
+        baseDir: testDir,
+        cliVersion: TEST_CLI_VERSION,
+        sourceUrl: 'https://example.atlassian.net/browse/TEST-NO-CL',
+      };
+
+      // When: saveJiraIssue を呼び出す
+      const result = await saveJiraIssue(data, options);
+
+      // Then: changelog.md に "No changelog" が出力される
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
+        const changelogPath = join(result.value.directory, 'changelog.md');
+        const changelogContent = await readFile(changelogPath, 'utf-8');
+
+        expect(changelogContent).toContain('No changelog');
       }
     });
   });
@@ -604,6 +808,144 @@ describe('saveJiraIssue', () => {
       writeFileSpy.mockRestore();
     });
 
+    // テストの目的: content.md 書き込み失敗時に FILE_WRITE_FAILED エラーを返すこと
+    it('Given: content.md 書き込みが失敗する状況, When: saveJiraIssue を呼び出す, Then: FILE_WRITE_FAILED エラーを返す', async () => {
+      // Given: content.md 書き込みが失敗する状況
+      const ensureDirSpy = vi
+        .spyOn(filePort, 'ensureDir')
+        .mockResolvedValueOnce(ok(undefined)) // issueDir 成功
+        .mockResolvedValueOnce(ok(undefined)); // attachmentsDir 成功
+      const writeFileSpy = vi
+        .spyOn(filePort, 'writeFileContent')
+        .mockResolvedValueOnce(ok(undefined)) // manifest.json 成功
+        .mockResolvedValueOnce(ok(undefined)) // issue.json 成功
+        .mockResolvedValueOnce(ok(undefined)) // description.txt 成功
+        .mockResolvedValueOnce(err({ message: 'Markdown write failed' })); // content.md 失敗
+
+      const data: JiraSaveData = {
+        attachments: [],
+        changelog: [],
+        comments: [],
+        description: null,
+        descriptionPlainText: null,
+        key: 'TEST-ERR-CONTENT-MD',
+        summary: 'content.md エラーテスト',
+      };
+      const options: JiraStorageOptions = {
+        baseDir: testDir,
+        cliVersion: TEST_CLI_VERSION,
+        sourceUrl: 'https://example.atlassian.net/browse/TEST-ERR-CONTENT-MD',
+      };
+
+      // When: saveJiraIssue を呼び出す
+      const result = await saveJiraIssue(data, options);
+
+      // Then: FILE_WRITE_FAILED エラーを返す
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.kind).toBe('FILE_WRITE_FAILED');
+        expect(result.error.message).toContain('content.md の書き込みに失敗しました');
+        expect(result.error.message).toContain('Markdown write failed');
+        expect(result.error.path).toContain('content.md');
+      }
+
+      ensureDirSpy.mockRestore();
+      writeFileSpy.mockRestore();
+    });
+
+    // テストの目的: comments.md 書き込み失敗時に FILE_WRITE_FAILED エラーを返すこと
+    it('Given: comments.md 書き込みが失敗する状況, When: saveJiraIssue を呼び出す, Then: FILE_WRITE_FAILED エラーを返す', async () => {
+      // Given: comments.md 書き込みが失敗する状況
+      const ensureDirSpy = vi
+        .spyOn(filePort, 'ensureDir')
+        .mockResolvedValueOnce(ok(undefined)) // issueDir 成功
+        .mockResolvedValueOnce(ok(undefined)); // attachmentsDir 成功
+      const writeFileSpy = vi
+        .spyOn(filePort, 'writeFileContent')
+        .mockResolvedValueOnce(ok(undefined)) // manifest.json 成功
+        .mockResolvedValueOnce(ok(undefined)) // issue.json 成功
+        .mockResolvedValueOnce(ok(undefined)) // description.txt 成功
+        .mockResolvedValueOnce(ok(undefined)) // content.md 成功
+        .mockResolvedValueOnce(err({ message: 'Comments write failed' })); // comments.md 失敗
+
+      const data: JiraSaveData = {
+        attachments: [],
+        changelog: [],
+        comments: [],
+        description: null,
+        descriptionPlainText: null,
+        key: 'TEST-ERR-COMMENTS-MD',
+        summary: 'comments.md エラーテスト',
+      };
+      const options: JiraStorageOptions = {
+        baseDir: testDir,
+        cliVersion: TEST_CLI_VERSION,
+        sourceUrl: 'https://example.atlassian.net/browse/TEST-ERR-COMMENTS-MD',
+      };
+
+      // When: saveJiraIssue を呼び出す
+      const result = await saveJiraIssue(data, options);
+
+      // Then: FILE_WRITE_FAILED エラーを返す
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.kind).toBe('FILE_WRITE_FAILED');
+        expect(result.error.message).toContain('comments.md の書き込みに失敗しました');
+        expect(result.error.message).toContain('Comments write failed');
+        expect(result.error.path).toContain('comments.md');
+      }
+
+      ensureDirSpy.mockRestore();
+      writeFileSpy.mockRestore();
+    });
+
+    // テストの目的: changelog.md 書き込み失敗時に FILE_WRITE_FAILED エラーを返すこと
+    it('Given: changelog.md 書き込みが失敗する状況, When: saveJiraIssue を呼び出す, Then: FILE_WRITE_FAILED エラーを返す', async () => {
+      // Given: changelog.md 書き込みが失敗する状況
+      const ensureDirSpy = vi
+        .spyOn(filePort, 'ensureDir')
+        .mockResolvedValueOnce(ok(undefined)) // issueDir 成功
+        .mockResolvedValueOnce(ok(undefined)); // attachmentsDir 成功
+      const writeFileSpy = vi
+        .spyOn(filePort, 'writeFileContent')
+        .mockResolvedValueOnce(ok(undefined)) // manifest.json 成功
+        .mockResolvedValueOnce(ok(undefined)) // issue.json 成功
+        .mockResolvedValueOnce(ok(undefined)) // description.txt 成功
+        .mockResolvedValueOnce(ok(undefined)) // content.md 成功
+        .mockResolvedValueOnce(ok(undefined)) // comments.md 成功
+        .mockResolvedValueOnce(err({ message: 'Changelog write failed' })); // changelog.md 失敗
+
+      const data: JiraSaveData = {
+        attachments: [],
+        changelog: [],
+        comments: [],
+        description: null,
+        descriptionPlainText: null,
+        key: 'TEST-ERR-CHANGELOG-MD',
+        summary: 'changelog.md エラーテスト',
+      };
+      const options: JiraStorageOptions = {
+        baseDir: testDir,
+        cliVersion: TEST_CLI_VERSION,
+        sourceUrl: 'https://example.atlassian.net/browse/TEST-ERR-CHANGELOG-MD',
+      };
+
+      // When: saveJiraIssue を呼び出す
+      const result = await saveJiraIssue(data, options);
+
+      // Then: FILE_WRITE_FAILED エラーを返す
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.kind).toBe('FILE_WRITE_FAILED');
+        expect(result.error.message).toContain('changelog.md の書き込みに失敗しました');
+        expect(result.error.message).toContain('Changelog write failed');
+        expect(result.error.path).toContain('changelog.md');
+      }
+
+      ensureDirSpy.mockRestore();
+      writeFileSpy.mockRestore();
+    });
+
     // テストの目的: changelog.json 書き込み失敗時に FILE_WRITE_FAILED エラーを返すこと
     it('Given: changelog.json 書き込みが失敗する状況, When: saveJiraIssue を呼び出す, Then: FILE_WRITE_FAILED エラーを返す', async () => {
       // Given: changelog.json 書き込みが失敗する状況
@@ -617,6 +959,8 @@ describe('saveJiraIssue', () => {
         .mockResolvedValueOnce(ok(undefined)) // issue.json 成功
         .mockResolvedValueOnce(ok(undefined)) // description.txt 成功
         .mockResolvedValueOnce(ok(undefined)) // content.md 成功
+        .mockResolvedValueOnce(ok(undefined)) // comments.md 成功
+        .mockResolvedValueOnce(ok(undefined)) // changelog.md 成功
         .mockResolvedValueOnce(err({ message: 'Network error' })); // changelog.json 失敗
 
       const data: JiraSaveData = {
@@ -663,6 +1007,8 @@ describe('saveJiraIssue', () => {
         .mockResolvedValueOnce(ok(undefined)) // issue.json 成功
         .mockResolvedValueOnce(ok(undefined)) // description.txt 成功
         .mockResolvedValueOnce(ok(undefined)) // content.md 成功
+        .mockResolvedValueOnce(ok(undefined)) // comments.md 成功
+        .mockResolvedValueOnce(ok(undefined)) // changelog.md 成功
         .mockResolvedValueOnce(ok(undefined)) // changelog.json 成功
         .mockResolvedValueOnce(err({ message: 'Timeout' })); // comments.json 失敗
 
@@ -710,6 +1056,8 @@ describe('saveJiraIssue', () => {
         .mockResolvedValueOnce(ok(undefined)) // issue.json 成功
         .mockResolvedValueOnce(ok(undefined)) // description.txt 成功
         .mockResolvedValueOnce(ok(undefined)) // content.md 成功
+        .mockResolvedValueOnce(ok(undefined)) // comments.md 成功
+        .mockResolvedValueOnce(ok(undefined)) // changelog.md 成功
         .mockResolvedValueOnce(ok(undefined)) // changelog.json 成功
         .mockResolvedValueOnce(ok(undefined)) // comments.json 成功
         .mockResolvedValueOnce(err({ message: 'Quota exceeded' })); // attachments.json 失敗

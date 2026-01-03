@@ -17,7 +17,7 @@ import { fetchConfluencePage } from '../confluence/confluence-service.js';
 import { fetchJiraIssue } from '../jira/jira-service.js';
 import { formatConfluencePage, formatJiraIssue, writeToFile } from '../output/output-service.js';
 import { saveConfluencePage, saveConfluenceVersions, saveJiraIssue } from '../storage/storage-service.js';
-import { convertAdfToPlainText, convertStorageFormatToPlainText } from '../text-converter/text-converter.js';
+import { convertStorageFormatToPlainText } from '../text-converter/text-converter.js';
 import { parseUrl } from '../url-parser/url-parser.js';
 import { fetchAndOutput, fetchAndSave, fetchResource } from './fetch-service.js';
 
@@ -35,6 +35,7 @@ describe('fetchResource', () => {
         changelog: [],
         comments: [],
         description: 'Test description',
+        descriptionAdf: { content: [], type: 'doc' },
         key: 'PROJ-123',
         summary: 'Test Issue',
       };
@@ -423,6 +424,7 @@ describe('fetchAndOutput', () => {
         changelog: [],
         comments: [],
         description: 'Test description',
+        descriptionAdf: { content: [], type: 'doc' },
         key: 'PROJ-123',
         summary: 'Test Issue',
       };
@@ -459,6 +461,7 @@ describe('fetchAndOutput', () => {
         changelog: [],
         comments: [],
         description: 'Test description',
+        descriptionAdf: { content: [], type: 'doc' },
         key: 'PROJ-123',
         summary: 'Test Issue',
       };
@@ -494,6 +497,7 @@ describe('fetchAndOutput', () => {
         changelog: [],
         comments: [],
         description: 'Test description',
+        descriptionAdf: { content: [], type: 'doc' },
         key: 'PROJ-123',
         summary: 'Test Issue',
       };
@@ -566,6 +570,7 @@ describe('fetchAndOutput', () => {
         changelog: [],
         comments: [],
         description: 'Test description',
+        descriptionAdf: { content: [], type: 'doc' },
         key: 'PROJ-123',
         summary: 'Test Issue',
       };
@@ -603,6 +608,7 @@ describe('fetchAndOutput', () => {
         changelog: [],
         comments: [],
         description: 'Test description',
+        descriptionAdf: { content: [], type: 'doc' },
         key: 'PROJ-123',
         summary: 'Test Issue',
       };
@@ -664,6 +670,7 @@ describe('fetchAndOutput', () => {
         changelog: [],
         comments: [],
         description: 'Test description',
+        descriptionAdf: { content: [], type: 'doc' },
         key: 'PROJ-123',
         summary: 'Test Issue',
       };
@@ -703,6 +710,10 @@ describe('fetchAndSave', () => {
   describe('Given: 有効な Jira Issue URL とダウンロードオプションが指定される', () => {
     it('When: fetchAndSave を呼び出す Then: ディレクトリ構造で保存して結果を返す', async () => {
       const url = 'https://mycompany.atlassian.net/browse/PROJ-123';
+      const mockDescriptionAdf = {
+        content: [{ content: [{ text: 'Test description', type: 'text' }], type: 'paragraph' }],
+        type: 'doc',
+      };
       const mockIssue: JiraIssue = {
         attachments: [
           {
@@ -716,6 +727,7 @@ describe('fetchAndSave', () => {
         changelog: [],
         comments: [],
         description: 'Test description',
+        descriptionAdf: mockDescriptionAdf,
         key: 'PROJ-123',
         summary: 'Test Issue',
       };
@@ -729,7 +741,6 @@ describe('fetchAndSave', () => {
         }),
       );
       vi.mocked(fetchJiraIssue).mockResolvedValue(ok(mockIssue));
-      vi.mocked(convertAdfToPlainText).mockReturnValue('Test description');
       vi.mocked(saveJiraIssue).mockResolvedValue(
         ok({
           directory: '/tmp/output/jira/PROJ-123',
@@ -760,12 +771,13 @@ describe('fetchAndSave', () => {
         expect(result.value.directory).toBe('/tmp/output/jira/PROJ-123');
         expect(result.value.manifest.resourceType).toBe('jiraIssue');
       }
+      // description は ADF、descriptionPlainText はプレーンテキスト
       expect(saveJiraIssue).toHaveBeenCalledWith(
         expect.objectContaining({
           attachments: mockIssue.attachments,
           changelog: mockIssue.changelog,
           comments: mockIssue.comments,
-          description: mockIssue.description,
+          description: mockDescriptionAdf,
           descriptionPlainText: 'Test description',
           key: 'PROJ-123',
           summary: 'Test Issue',
@@ -936,6 +948,7 @@ describe('fetchAndSave', () => {
         changelog: [],
         comments: [],
         description: 'Test description',
+        descriptionAdf: { content: [], type: 'doc' },
         key: 'PROJ-123',
         summary: 'Test Issue',
       };
@@ -949,7 +962,6 @@ describe('fetchAndSave', () => {
         }),
       );
       vi.mocked(fetchJiraIssue).mockResolvedValue(ok(mockIssue));
-      vi.mocked(convertAdfToPlainText).mockReturnValue('Test description');
       vi.mocked(saveJiraIssue).mockResolvedValue(
         err({
           kind: 'DIRECTORY_CREATE_FAILED',
@@ -1045,6 +1057,7 @@ describe('fetchAndSave', () => {
         changelog: [],
         comments: [],
         description: null,
+        descriptionAdf: null,
         key: 'PROJ-123',
         summary: 'Test Issue',
       };
@@ -1058,7 +1071,6 @@ describe('fetchAndSave', () => {
         }),
       );
       vi.mocked(fetchJiraIssue).mockResolvedValue(ok(mockIssue));
-      // description が null なので convertAdfToPlainText は呼ばれない
       vi.mocked(saveJiraIssue).mockResolvedValue(
         ok({
           directory: '/tmp/output/jira/PROJ-123',
@@ -1085,7 +1097,7 @@ describe('fetchAndSave', () => {
       });
 
       expect(result.isOk()).toBe(true);
-      expect(convertAdfToPlainText).not.toHaveBeenCalled();
+      // description は ADF (null)、descriptionPlainText もプレーンテキスト (null)
       expect(saveJiraIssue).toHaveBeenCalledWith(
         expect.objectContaining({
           description: null,
