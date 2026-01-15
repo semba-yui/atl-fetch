@@ -52,8 +52,8 @@ catalogs:
       specifier: 17.3.5
       version: 17.3.5
     diff:
-      specifier: 8.0.2
-      version: 8.0.2
+      specifier: 8.0.3
+      version: 8.0.3
     fast-check:
       specifier: 4.5.3
       version: 4.5.3
@@ -148,7 +148,7 @@ importers:
         version: 0.13.10(typescript@5.9.3)(zod@4.3.4)
       diff:
         specifier: 'catalog:'
-        version: 8.0.2
+        version: 8.0.3
       got:
         specifier: 'catalog:'
         version: 14.6.6
@@ -1751,8 +1751,8 @@ packages:
     resolution: {integrity: sha512-58lmxKSA4BNyLz+HHMUzlOEpg09FV+ev6ZMe3vJihgdxzgcwZ8VoEEPmALCZG9LmqfVoNMMKpttIYTVG6uDY7A==}
     engines: {node: '>=0.3.1'}
 
-  diff@8.0.2:
-    resolution: {integrity: sha512-sSuxWU5j5SR9QQji/o2qMvqRNYRDOcBTgsJ/DeCf4iSN4gW+gNMXM7wFIP+fdXZxoNiAnHUTGjCr+TSWXdRDKg==}
+  diff@8.0.3:
+    resolution: {integrity: sha512-qejHi7bcSD4hQAZE0tNAawRK1ZtafHDmMTMkrrIGgSLl7hTnQHmKCeB45xAcbfTqK2zowkM3j3bHt/4b/ARbYQ==}
     engines: {node: '>=0.3.1'}
 
   dot-prop@5.3.0:
@@ -5172,7 +5172,7 @@ snapshots:
 
   diff@4.0.2: {}
 
-  diff@8.0.2: {}
+  diff@8.0.3: {}
 
   dot-prop@5.3.0:
     dependencies:
