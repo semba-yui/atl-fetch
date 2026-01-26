@@ -5,6 +5,13 @@
 フォーマットは [Keep a Changelog](https://keepachangelog.com/ja/1.1.0/) に基づいています。
 バージョニングは [Semantic Versioning](https://semver.org/lang/ja/) に従っています。
 
+## [1.2.1](https://github.com/semba-yui/atl-fetch/compare/v1.2.0...v1.2.1) (2026-01-26)
+
+
+### Bug Fixes
+
+* **ci:** カバレッジ閾値調整と README に npx 使用方法を追加 ([e59e6e5](https://github.com/semba-yui/atl-fetch/commit/e59e6e5c811c330c2330dc94afdbe89e6e7a02a2))
+
 ## [Unreleased]
 
 ## [1.2.0] - 2026-01-03
