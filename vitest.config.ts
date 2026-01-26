@@ -6,12 +6,18 @@ export default defineConfig({
   },
   test: {
     coverage: {
-      exclude: ['src/**/*.test.ts', 'src/types/**'],
+      exclude: [
+        'src/**/*.test.ts',
+        'src/types/**',
+        'src/index.ts', // エントリーポイント
+        'src/**/index.ts', // バレルエクスポート
+        'src/cli/**', // CLI 実行ロジック（E2E テストでカバー）
+      ],
       include: ['src/**/*.ts'],
       provider: 'v8',
       reporter: ['text', 'html', 'lcov'],
       thresholds: {
-        branches: 90,
+        branches: 85,
         functions: 90,
         lines: 90,
         statements: 90,

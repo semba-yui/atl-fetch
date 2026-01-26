@@ -25,7 +25,18 @@ Atlassian Cloud（Jira / Confluence）から情報を取得する Node.js CLI �
 - Node.js 22.0.0 以上
 - pnpm（推奨）または npm
 
-## インストール
+## 使い方
+
+### npx で即時実行（インストール不要）
+
+```bash
+# 環境変数を設定して実行
+ATLASSIAN_EMAIL="your-email@example.com" \
+ATLASSIAN_API_TOKEN="your-api-token" \
+npx atl-fetch https://your-domain.atlassian.net/browse/PROJECT-123
+```
+
+### グローバルインストール
 
 ```bash
 # npm
@@ -50,20 +61,22 @@ API トークンは [Atlassian Account Settings](https://id.atlassian.com/manage
 
 ```bash
 # Jira Issue を取得
-atl-fetch https://your-domain.atlassian.net/browse/PROJECT-123
+npx atl-fetch https://your-domain.atlassian.net/browse/PROJECT-123
 
 # Confluence ページを取得
-atl-fetch https://your-domain.atlassian.net/wiki/spaces/SPACE/pages/123456/Page+Title
+npx atl-fetch https://your-domain.atlassian.net/wiki/spaces/SPACE/pages/123456/Page+Title
 
 # Markdown 形式で出力
-atl-fetch https://your-domain.atlassian.net/browse/PROJECT-123 --format markdown
+npx atl-fetch https://your-domain.atlassian.net/browse/PROJECT-123 --format markdown
 
 # 添付ファイルをダウンロード
-atl-fetch https://your-domain.atlassian.net/browse/PROJECT-123 --download --dir ./output
+npx atl-fetch https://your-domain.atlassian.net/browse/PROJECT-123 --download --dir ./output
 
 # ファイルに保存（リダイレクト）
-atl-fetch https://your-domain.atlassian.net/browse/PROJECT-123 > result.json
+npx atl-fetch https://your-domain.atlassian.net/browse/PROJECT-123 > result.json
 ```
+
+**Note**: グローバルインストール済みの場合は `npx` を省略して `atl-fetch` として実行できます。
 
 ## CLI オプション
 
@@ -88,7 +101,7 @@ atl-fetch https://your-domain.atlassian.net/browse/PROJECT-123 > result.json
 認証情報の設定状態を確認します。
 
 ```bash
-atl-fetch auth check
+npx atl-fetch auth check
 ```
 
 出力例（設定済み）:
