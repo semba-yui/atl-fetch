@@ -97,8 +97,10 @@ export const preprocessHtmlForMarkdown = (html: string, attachmentPaths?: Attach
   }
 
   // ac:structured-macro name="toc" を [TOC] マーカーに変換（markdown-toc 互換形式）
+  // toc は body を持たないため、Confluence は self-closing 形式 `<ac:structured-macro ac:name="toc" ... />`
+  // でも出力する。両形式に対応する。
   result = result.replace(
-    /<ac:structured-macro[^>]*ac:name="toc"[^>]*>[\s\S]*?<\/ac:structured-macro>/gi,
+    /<ac:structured-macro[^>]*ac:name="toc"[^>]*?(?:\/>|>[\s\S]*?<\/ac:structured-macro>)/gi,
     '<p>[TOC]</p>',
   );
 
