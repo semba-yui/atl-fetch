@@ -75,13 +75,22 @@ export const preprocessHtmlForMarkdown = (html: string, attachmentPaths?: Attach
     },
   );
 
-  // ac:structured-macro name="info/note/tip/warning" を GitHub Alerts 形式の blockquote に変換
+  // ac:structured-macro name="info/note/tip/warning" を GitHub Alerts 形式の blockquote に変換。
+  //
+  // GitHub Alerts は 5 種類 (NOTE / IMPORTANT / TIP / WARNING / CAUTION) あり、
+  // Confluence の 4 つのパネルマクロをそれぞれ別の Alert type に 1:1 で写像する。
+  // これによりダウンストリームでは「どの panel macro 由来か」を marker から
+  // 一意に復元できる。元の実装は info と note を両方 NOTE に集約していたため
+  // この情報が失われていた。
+  //
+  // 写像先 (IMPORTANT / WARNING / TIP / CAUTION) はあくまで「重ならない 4 個を選んだ」
+  // 結果で、特定の意味付けは持たせていない。
   const alertMacros = ['info', 'note', 'tip', 'warning'];
   const alertTypeMap: Record<string, string> = {
-    info: 'NOTE',
-    note: 'NOTE',
+    info: 'IMPORTANT',
+    note: 'WARNING',
     tip: 'TIP',
-    warning: 'WARNING',
+    warning: 'CAUTION',
   };
 
   for (const macroName of alertMacros) {

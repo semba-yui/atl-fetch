@@ -628,8 +628,10 @@ describe('convertStorageFormatToMarkdown', () => {
   // TC-080〜TC-090: 情報パネル（GitHub Alerts）
   // ============================================================
   describe('情報パネル（GitHub Alerts）', () => {
-    // テストの目的: info マクロが > [!NOTE] に変換されること
-    it('TC-080: Given: info マクロ, When: convertStorageFormatToMarkdown を呼び出す, Then: > [!NOTE] に変換される', () => {
+    // テストの目的: info マクロが > [!IMPORTANT] に変換されること
+    // 4 つの panel macro を 4 つの異なる GitHub Alerts type に 1:1 で写像し、
+    // ダウンストリームで panel 種別を区別できるようにする。
+    it('TC-080: Given: info マクロ, When: convertStorageFormatToMarkdown を呼び出す, Then: > [!IMPORTANT] に変換される', () => {
       // Given: info マクロ
       const input =
         '<ac:structured-macro ac:name="info"><ac:rich-text-body><p>情報内容</p></ac:rich-text-body></ac:structured-macro>';
@@ -637,13 +639,13 @@ describe('convertStorageFormatToMarkdown', () => {
       // When: convertStorageFormatToMarkdown を呼び出す
       const result = convertStorageFormatToMarkdown(input);
 
-      // Then: > [!NOTE] に変換される
-      expect(result).toContain('> [!NOTE]');
+      // Then: > [!IMPORTANT] に変換される
+      expect(result).toContain('> [!IMPORTANT]');
       expect(result).toContain('情報内容');
     });
 
-    // テストの目的: note マクロが > [!NOTE] に変換されること
-    it('TC-081: Given: note マクロ, When: convertStorageFormatToMarkdown を呼び出す, Then: > [!NOTE] に変換される', () => {
+    // テストの目的: note マクロが > [!WARNING] に変換されること
+    it('TC-081: Given: note マクロ, When: convertStorageFormatToMarkdown を呼び出す, Then: > [!WARNING] に変換される', () => {
       // Given: note マクロ
       const input =
         '<ac:structured-macro ac:name="note"><ac:rich-text-body><p>ノート内容</p></ac:rich-text-body></ac:structured-macro>';
@@ -651,8 +653,8 @@ describe('convertStorageFormatToMarkdown', () => {
       // When: convertStorageFormatToMarkdown を呼び出す
       const result = convertStorageFormatToMarkdown(input);
 
-      // Then: > [!NOTE] に変換される
-      expect(result).toContain('> [!NOTE]');
+      // Then: > [!WARNING] に変換される
+      expect(result).toContain('> [!WARNING]');
       expect(result).toContain('ノート内容');
     });
 
@@ -670,8 +672,8 @@ describe('convertStorageFormatToMarkdown', () => {
       expect(result).toContain('ヒント内容');
     });
 
-    // テストの目的: warning マクロが > [!WARNING] に変換されること
-    it('TC-083: Given: warning マクロ, When: convertStorageFormatToMarkdown を呼び出す, Then: > [!WARNING] に変換される', () => {
+    // テストの目的: warning マクロが > [!CAUTION] に変換されること
+    it('TC-083: Given: warning マクロ, When: convertStorageFormatToMarkdown を呼び出す, Then: > [!CAUTION] に変換される', () => {
       // Given: warning マクロ
       const input =
         '<ac:structured-macro ac:name="warning"><ac:rich-text-body><p>警告内容</p></ac:rich-text-body></ac:structured-macro>';
@@ -679,8 +681,8 @@ describe('convertStorageFormatToMarkdown', () => {
       // When: convertStorageFormatToMarkdown を呼び出す
       const result = convertStorageFormatToMarkdown(input);
 
-      // Then: > [!WARNING] に変換される
-      expect(result).toContain('> [!WARNING]');
+      // Then: > [!CAUTION] に変換される
+      expect(result).toContain('> [!CAUTION]');
       expect(result).toContain('警告内容');
     });
   });
