@@ -407,6 +407,26 @@ describe('convertStorageFormatToMarkdown', () => {
       expect(result).not.toContain('ac:structured-macro');
     });
 
+    // テストの目的: self-closing 形式の toc マクロも TOC マーカーに変換され、前後コンテンツが保持されること
+    // 背景: Confluence は body を持たない toc マクロを `<ac:structured-macro ac:name="toc" .../>`
+    // の self-closing 形式で出力することがあり、従来の正規表現では未対応のため
+    // turndown 段に macro が残り、結果として toc 直前のコンテンツが欠落する事象が起きていた。
+    it('TC-065b: Given: self-closing 形式の toc マクロ, When: convertStorageFormatToMarkdown を呼び出す, Then: TOC マーカーに変換され前後のコンテンツが保持される', () => {
+      // Given: self-closing 形式の toc マクロ
+      const input = `<p>見出し前</p>
+        <ac:structured-macro ac:name="toc" ac:schema-version="1" data-layout="default" ac:local-id="78d58e0e-a222-492b-b26c-7c34f5e86049" ac:macro-id="04bf9d02-e8cb-4b52-a918-867a950adead" />
+        <p>見出し後</p>`;
+
+      // When: convertStorageFormatToMarkdown を呼び出す
+      const result = convertStorageFormatToMarkdown(input);
+
+      // Then: TOC マーカーに変換され、前後のコンテンツが保持される
+      expect(result).toContain('TOC');
+      expect(result).toContain('見出し前');
+      expect(result).toContain('見出し後');
+      expect(result).not.toContain('ac:structured-macro');
+    });
+
     // テストの目的: anchor マクロがアンカー要素に変換されること
     it('TC-066: Given: anchor マクロ, When: convertStorageFormatToMarkdown を呼び出す, Then: <a id="name"></a> に変換される', () => {
       // Given: anchor マクロ
