@@ -4,6 +4,18 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to publish (e.g. v1.2.2). Defaults to the current ref.'
+        required: false
+        type: string
+  workflow_call:
+    inputs:
+      tag:
+        description: 'Tag to publish (passed from caller workflow).'
+        required: false
+        type: string
 
 jobs:
   validate:
@@ -16,6 +28,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
+          ref: ${{ inputs.tag || github.ref }}
 
       - name: Setup mise
         uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
@@ -46,6 +59,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
+          ref: ${{ inputs.tag || github.ref }}
 
       - name: Setup mise
         uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
@@ -58,8 +72,12 @@ jobs:
       - name: Build
         run: pnpm run build
 
+      # `cache:` input を指定していないため setup-node のキャッシュは無効。
+      # publish トリガと併用される構成として zizmor が cache-poisoning を Low
+      # confidence で警告するが、本ステップではキャッシュを取得・利用しないため
+      # 偽陽性として suppress する。
       - name: Setup Node.js for npm publish
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0 # zizmor: ignore[cache-poisoning]
         with:
           node-version: '24'
           registry-url: 'https://registry.npmjs.org'
