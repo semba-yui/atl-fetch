@@ -72,8 +72,12 @@ jobs:
       - name: Build
         run: pnpm run build
 
+      # `cache:` input を指定していないため setup-node のキャッシュは無効。
+      # publish トリガと併用される構成として zizmor が cache-poisoning を Low
+      # confidence で警告するが、本ステップではキャッシュを取得・利用しないため
+      # 偽陽性として suppress する。
       - name: Setup Node.js for npm publish
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0 # zizmor: ignore[cache-poisoning]
         with:
           node-version: '24'
           registry-url: 'https://registry.npmjs.org'
