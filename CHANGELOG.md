@@ -5,6 +5,13 @@
 フォーマットは [Keep a Changelog](https://keepachangelog.com/ja/1.1.0/) に基づいています。
 バージョニングは [Semantic Versioning](https://semver.org/lang/ja/) に従っています。
 
+## [1.2.2](https://github.com/semba-yui/atl-fetch/compare/v1.2.1...v1.2.2) (2026-05-18)
+
+
+### Bug Fixes
+
+* **text-converter:** handle self-closing toc macro ([#16](https://github.com/semba-yui/atl-fetch/issues/16)) ([72f8ee6](https://github.com/semba-yui/atl-fetch/commit/72f8ee621dbef9eeacada48e85b4084eff4947de))
+
 ## [1.2.1](https://github.com/semba-yui/atl-fetch/compare/v1.2.0...v1.2.1) (2026-01-26)
 
 
